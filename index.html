@@ -1,0 +1,2828 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>理工科实验数据处理器</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect width='24' height='24' rx='5' fill='%2314b8a6'/%3E%3Cpath d='M5 17l4-6 3 3 4-8 3 11' stroke='white' stroke-width='2' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E" />
+  <style>
+    :root {
+      --primary: #2dd4bf;
+      --primary-2: #38bdf8;
+      --primary-soft: rgba(45, 212, 191, .12);
+      --bg: #070b11;
+      --bg2: #0b121b;
+      --card: #0f1722;
+      --card2: #131e2b;
+      --border: #1f2d3d;
+      --border2: #2a3b4e;
+      --text: #dbe6f0;
+      --muted: #8298ac;
+      --amber: #f5b13d;
+      --danger: #f87171;
+      --ok: #34d399;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; color: var(--text);
+      font-family: system-ui, -apple-system, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+      background:
+        radial-gradient(1200px 600px at 85% -10%, rgba(56, 189, 248, .09), transparent 60%),
+        radial-gradient(1000px 500px at 0% 0%, rgba(45, 212, 191, .08), transparent 55%),
+        var(--bg);
+      background-image:
+        linear-gradient(rgba(120, 160, 190, .045) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(120, 160, 190, .045) 1px, transparent 1px),
+        radial-gradient(1200px 600px at 85% -10%, rgba(56, 189, 248, .09), transparent 60%),
+        radial-gradient(1000px 500px at 0% 0%, rgba(45, 212, 191, .08), transparent 55%),
+        var(--bg);
+      background-size: 28px 28px, 28px 28px, auto, auto, auto;
+      min-height: 100vh;
+    }
+    header { position: sticky; top: 0; z-index: 10; background: rgba(7, 11, 17, .82); border-bottom: 1px solid var(--border); backdrop-filter: blur(8px); }
+    .header-inner { max-width: 1180px; margin: 0 auto; display: flex; align-items: center; gap: 12px; padding: 12px 16px; }
+    .logo { width: 34px; height: 34px; border-radius: 9px; background: linear-gradient(135deg, var(--primary), var(--primary-2)); color: #06201d; display: flex; align-items: center; justify-content: center; flex: none; box-shadow: 0 0 18px rgba(45, 212, 191, .35); }
+    .logo svg { width: 19px; height: 19px; }
+    .title { font-size: 15px; font-weight: 600; letter-spacing: .2px; }
+    .subtitle { font-size: 12px; color: var(--muted); }
+    main { max-width: 1180px; margin: 0 auto; padding: 18px 16px 48px; }
+    .tabs { display: flex; flex-direction: column; gap: 10px; margin-bottom: 16px; }
+    .tab-group { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+    .tab-cat { flex: none; width: 108px; font-size: 12px; color: var(--muted); letter-spacing: .06em; }
+    .tab { border: 1px solid var(--border); background: var(--card); color: var(--muted); border-radius: 9px; padding: 8px 14px; font-size: 13px; cursor: pointer; transition: all .15s ease; }
+    .tab:hover { border-color: var(--border2); color: var(--text); }
+    .tab.active { background: var(--primary-soft); color: var(--primary); border-color: var(--primary); box-shadow: inset 0 0 12px rgba(45, 212, 191, .08); }
+    @media (max-width: 900px) { .tab-cat { width: 100%; margin-bottom: 2px; } }
+    .panel { display: none; }
+    .panel.active { display: block; animation: fadeIn .18s ease; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+    .grid { display: grid; grid-template-columns: 380px 1fr; gap: 16px; align-items: start; }
+    @media (max-width: 900px) { .grid { grid-template-columns: 1fr; } }
+    .card { background: linear-gradient(180deg, rgba(19, 30, 43, .9), rgba(15, 23, 34, .9)); border: 1px solid var(--border); border-radius: 14px; box-shadow: 0 8px 24px rgba(0, 0, 0, .35); }
+    .card-hd { padding: 14px 16px 0; font-size: 14px; font-weight: 600; color: var(--text); }
+    .card-bd { padding: 14px 16px; }
+    .field { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; flex-wrap: wrap; }
+    .field label { font-size: 13px; color: var(--muted); min-width: 76px; }
+    input[type="number"], input[type="text"], select {
+      height: 34px; border: 1px solid var(--border2); border-radius: 8px; padding: 0 10px;
+      font-size: 14px; background: #0c141d; color: var(--text);
+    }
+    input[type="number"] { width: 110px; }
+    input[type="text"] { width: 150px; }
+    input:focus, select:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(45, 212, 191, .15); }
+    select option { background: var(--card); color: var(--text); }
+    .btn { display: inline-flex; align-items: center; gap: 6px; border: 1px solid transparent; border-radius: 9px; padding: 8px 14px; font-size: 13px; cursor: pointer; background: linear-gradient(135deg, #14b8a6, #0ea5e9); color: #fff; }
+    .btn.secondary { background: var(--card2); color: var(--text); border-color: var(--border2); }
+    .btn.ghost { background: transparent; color: var(--muted); }
+    .btn:hover { filter: brightness(1.1); }
+    .row-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 6px; }
+    table.data { width: 100%; border-collapse: collapse; font-size: 13px; }
+    table.data th, table.data td { border-bottom: 1px solid var(--border); padding: 7px 8px; }
+    table.data th { color: var(--muted); font-weight: 500; text-align: left; }
+    table.data td.num, table.data th.num { text-align: right; font-variant-numeric: tabular-nums; }
+    table.data input { width: 100%; height: 30px; border: 1px solid transparent; border-radius: 6px; padding: 0 8px; font-size: 13px; background: transparent; color: var(--text); }
+    table.data input:focus { border-color: var(--primary); background: var(--bg2); }
+    .res-table { width: 100%; border-collapse: collapse; font-size: 13px; table-layout: fixed; }
+    .res-table th, .res-table td { border-bottom: 1px solid var(--border); padding: 9px 10px; }
+    .res-table th { color: var(--muted); font-weight: 500; text-align: left; width: 38%; }
+    .res-table td.num { text-align: right; font-variant-numeric: tabular-nums; }
+    .res-table .big { font-size: 15px; font-weight: 600; color: var(--primary); }
+    .hint { font-size: 12px; color: var(--muted); line-height: 1.6; }
+    .stat-row { display: flex; flex-wrap: wrap; gap: 22px; margin-bottom: 12px; }
+    .stat .n { font-size: 22px; font-weight: 600; font-variant-numeric: tabular-nums; color: var(--text); }
+    .stat .l { font-size: 12px; color: var(--muted); }
+    .ok { color: var(--ok); }
+    .bad { color: var(--danger); }
+    .chart-box { width: 100%; overflow-x: auto; }
+    svg.chart { width: 100%; height: auto; display: block; }
+    .footnote { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--muted); margin-top: 10px; }
+    .hidden { display: none !important; }
+    .tag { font-size: 12px; color: var(--primary); background: var(--primary-soft); border-radius: 6px; padding: 2px 8px; }
+    .sub-hd { font-size: 12px; color: var(--primary); letter-spacing: .4px; margin: 14px 0 8px; text-transform: uppercase; }
+    .formula-box { margin-top: 12px; background: rgba(45, 212, 191, .05); border: 1px solid var(--border2); border-left: 3px solid var(--primary); border-radius: 10px; padding: 10px 12px; }
+    .formula-box .fb-title { font-size: 12px; color: var(--primary); letter-spacing: .4px; margin-bottom: 6px; }
+    .formula-box ul { margin: 0; padding-left: 18px; }
+    .formula-box li { font-size: 12.5px; color: var(--text); line-height: 1.9; }
+    .formula-box .f { font-family: ui-monospace, Consolas, "Courier New", monospace; color: #7ee7d8; }
+    .calc-display { font-size: 26px; font-weight: 600; font-variant-numeric: tabular-nums; color: var(--primary); word-break: break-all; }
+    .calc-expr { font-family: ui-monospace, Consolas, monospace; font-size: 13px; color: var(--muted); word-break: break-all; }
+    .hist-item { display: flex; justify-content: space-between; gap: 10px; padding: 6px 8px; border-bottom: 1px solid var(--border); font-size: 13px; cursor: pointer; }
+    .hist-item:hover { background: var(--card2); }
+    .hist-item .he { color: var(--muted); font-family: ui-monospace, Consolas, monospace; }
+    .hist-item .hr { color: var(--text); font-variant-numeric: tabular-nums; }
+    input.wide { width: 100%; }
+    .seg { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+    .seg button { border: 1px solid var(--border2); background: var(--card2); color: var(--muted); border-radius: 8px; padding: 6px 12px; font-size: 12.5px; cursor: pointer; }
+    .seg button.active { background: var(--primary-soft); color: var(--primary); border-color: var(--primary); }
+    .paste-overlay { position: fixed; inset: 0; z-index: 50; background: rgba(4, 8, 13, .7); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; padding: 20px; }
+    .paste-box { width: 560px; max-width: 100%; background: var(--card); border: 1px solid var(--border2); border-radius: 14px; padding: 16px; }
+    .paste-box textarea { width: 100%; min-height: 150px; background: #0c141d; border: 1px solid var(--border2); border-radius: 8px; color: var(--text); padding: 10px; font-size: 13px; font-family: ui-monospace, Consolas, monospace; resize: vertical; }
+    .report-doc { background: var(--bg2); border: 1px solid var(--border); border-radius: 14px; padding: 22px; }
+    .report-sec { margin-bottom: 22px; }
+    .report-sec h3 { font-size: 14px; margin: 0 0 10px; color: var(--primary); border-left: 3px solid var(--primary); padding-left: 10px; }
+    .report-empty { color: var(--muted); font-size: 13px; }
+    @media print {
+      body { background: #fff; color: #000; }
+      header, .tabs, .row-actions, .footnote, .report-tools, .paste-overlay { display: none !important; }
+      main { max-width: 100%; padding: 0; }
+      .panel { display: none !important; }
+      #p17 { display: block !important; }
+      .report-doc { border: none; padding: 0; background: #fff; }
+      .report-sec h3 { color: #000; border-color: #000; }
+      table.data, .res-table { font-size: 11px; }
+      .report-sec svg.chart { max-width: 480px; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="header-inner">
+      <span class="logo">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 16l4-6 3 3 4-8"/></svg>
+      </span>
+      <div>
+        <div class="title">理工科实验数据处理器</div>
+        <div class="subtitle">读数录入 · 不确定度 / 拟合 / 电路参数 / 真值表核对 · 报告表格与作图，全部本地计算</div>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <div class="tabs" id="tabs">
+      <div class="tab-group">
+        <span class="tab-cat">通用工具</span>
+        <button type="button" class="tab active" data-panel="p9">基础计算器</button>
+        <button type="button" class="tab" data-panel="p11">单位换算</button>
+        <button type="button" class="tab" data-panel="p10">函数作图 · 采样表</button>
+        <button type="button" class="tab" data-panel="p17">实验报告生成</button>
+      </div>
+      <div class="tab-group">
+        <span class="tab-cat">测量与不确定度</span>
+        <button type="button" class="tab" data-panel="p1">重复测量 · 不确定度</button>
+        <button type="button" class="tab" data-panel="p6">误差传递 · 间接测量</button>
+        <button type="button" class="tab" data-panel="p12">描述统计</button>
+        <button type="button" class="tab" data-panel="p15">修约 · t 因子</button>
+        <button type="button" class="tab" data-panel="p13">异常值判别</button>
+        <button type="button" class="tab" data-panel="p2">一元线性拟合</button>
+        <button type="button" class="tab" data-panel="p14">非线性拟合</button>
+        <button type="button" class="tab" data-panel="p5">逐差法</button>
+      </div>
+      <div class="tab-group">
+        <span class="tab-cat">电路实验</span>
+        <button type="button" class="tab" data-panel="p3">电路参数 · 功率因数</button>
+        <button type="button" class="tab" data-panel="p7">RC 时间常数</button>
+      </div>
+      <div class="tab-group">
+        <span class="tab-cat">数电实验</span>
+        <button type="button" class="tab" data-panel="p4">数电真值表核对</button>
+        <button type="button" class="tab" data-panel="p16">数电工具</button>
+      </div>
+      <div class="tab-group">
+        <span class="tab-cat">专项实验</span>
+        <button type="button" class="tab" data-panel="p8">光学干涉计算</button>
+      </div>
+    </div>
+
+    <!-- ===== 面板 1：重复测量不确定度 ===== -->
+    <section class="panel" id="p1">
+      <div class="grid">
+        <div class="card">
+          <div class="card-hd">输入原始读数</div>
+          <div class="card-bd">
+            <div class="field">
+              <label>量名称</label>
+              <input type="text" id="m1-name" value="电阻 R" />
+              <label>单位</label>
+              <input type="text" id="m1-unit" value="Ω" style="width:70px" />
+            </div>
+            <div class="field">
+              <label>仪器误差限 Δ</label>
+              <input type="number" id="m1-delta" step="any" value="0.05" />
+              <label>B 类分布</label>
+              <select id="m1-dist">
+                <option value="1.732">均匀分布 (÷√3)</option>
+                <option value="3">正态分布 (÷3)</option>
+                <option value="2.449">三角分布 (÷√6)</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>标准值 x₀</label>
+              <input type="number" id="m1-truth" step="any" placeholder="可选" />
+              <label>包含因子 k</label>
+              <input type="number" id="m1-k" step="any" value="2" style="width:70px" />
+            </div>
+            <table class="data">
+              <thead><tr><th style="width:46px">序号</th><th>读数 xᵢ</th><th style="width:64px"></th></tr></thead>
+              <tbody id="m1-rows"></tbody>
+            </table>
+            <div class="row-actions">
+              <button type="button" class="btn secondary" id="m1-add">添加一行</button>
+              <button type="button" class="btn ghost" id="m1-paste">粘贴批量</button>
+              <button type="button" class="btn ghost" id="m1-sample">填入示例</button>
+              <button type="button" class="btn ghost" id="m1-clear">清空</button>
+            </div>
+            <div class="formula-box">
+              <div class="fb-title">所用公式</div>
+              <ul>
+                <li>平均值：<span class="f">x̄ = (1/n) Σxᵢ</span></li>
+                <li>实验标准差（贝塞尔）：<span class="f">s = √[Σ(xᵢ−x̄)²/(n−1)]</span></li>
+                <li>A 类不确定度：<span class="f">u_A = s/√n</span></li>
+                <li>B 类不确定度：<span class="f">u_B = Δ/c</span>（均匀 c=√3，正态 c=3，三角 c=√6）</li>
+                <li>合成标准不确定度：<span class="f">u_c = √(u_A² + u_B²)</span></li>
+                <li>扩展不确定度：<span class="f">U = k·u_c</span>；相对不确定度 <span class="f">E_r = U/|x̄|×100%</span></li>
+              </ul>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-hd">计算结果（可直接粘进实验报告）</div>
+          <div class="card-bd" id="m1-result"><div class="hint">录入读数后自动计算。</div></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== 面板 2：线性拟合 ===== -->
+    <section class="panel" id="p2">
+      <div class="grid">
+        <div class="card">
+          <div class="card-hd">录入配对数据 (x, y)</div>
+          <div class="card-bd">
+            <div class="field">
+              <label>x 名称</label><input type="text" id="m2-xname" value="电压 U" />
+              <label>x 单位</label><input type="text" id="m2-xunit" value="V" style="width:70px" />
+            </div>
+            <div class="field">
+              <label>y 名称</label><input type="text" id="m2-yname" value="电流 I" />
+              <label>y 单位</label><input type="text" id="m2-yunit" value="mA" style="width:70px" />
+            </div>
+            <table class="data">
+              <thead><tr><th style="width:46px">序号</th><th>x</th><th>y</th><th style="width:64px"></th></tr></thead>
+              <tbody id="m2-rows"></tbody>
+            </table>
+            <div class="row-actions">
+              <button type="button" class="btn secondary" id="m2-add">添加一行</button>
+              <button type="button" class="btn ghost" id="m2-paste">粘贴批量</button>
+              <button type="button" class="btn ghost" id="m2-sample">填入示例</button>
+              <button type="button" class="btn ghost" id="m2-clear">清空</button>
+            </div>
+            <div class="formula-box">
+              <div class="fb-title">所用公式</div>
+              <ul>
+                <li>离差平方和：<span class="f">Lxx = Σxᵢ² − (Σxᵢ)²/n</span>，Lyy、Lxy 同理</li>
+                <li>斜率 / 截距：<span class="f">b = Lxy/Lxx</span>，<span class="f">a = ȳ − b·x̄</span></li>
+                <li>相关系数：<span class="f">r = Lxy/√(Lxx·Lyy)</span>，决定系数 <span class="f">R² = r²</span></li>
+                <li>残差标准差（自由度 n−2）：<span class="f">s_{y/x} = √[Σ(yᵢ−ŷᵢ)²/(n−2)]</span></li>
+                <li>斜率 / 截距标准偏差：<span class="f">u(b) = s_{y/x}/√Lxx</span>，<span class="f">u(a) = s_{y/x}·√(1/n + x̄²/Lxx)</span></li>
+              </ul>
+            </div>
+          </div>
+        </div>
+        <div>
+          <div class="card">
+            <div class="card-hd">拟合结果</div>
+            <div class="card-bd" id="m2-result"><div class="hint">录入配对数据后自动拟合。</div></div>
+          </div>
+          <div class="card" style="margin-top:16px">
+            <div class="card-hd">散点与拟合直线</div>
+            <div class="card-bd chart-box" id="m2-chart"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== 面板 3：电路参数 ===== -->
+    <section class="panel" id="p3">
+      <div class="grid">
+        <div class="card">
+          <div class="card-hd">录入电压表 / 电流表 / 功率表读数</div>
+          <div class="card-bd">
+            <div class="field">
+              <label>电源频率 f</label>
+              <input type="number" id="m3-f" step="any" value="50" style="width:90px" /><span class="hint">Hz</span>
+              <label>目标 cosφ₂</label>
+              <input type="number" id="m3-target" step="any" value="0.95" style="width:90px" />
+            </div>
+            <table class="data">
+              <thead><tr><th style="width:46px">组号</th><th>电压 U / V</th><th>电流 I / A</th><th>功率 P / W</th><th style="width:64px"></th></tr></thead>
+              <tbody id="m3-rows"></tbody>
+            </table>
+            <div class="row-actions">
+              <button type="button" class="btn secondary" id="m3-add">添加一行</button>
+              <button type="button" class="btn ghost" id="m3-sample">填入示例</button>
+              <button type="button" class="btn ghost" id="m3-clear">清空</button>
+            </div>
+            <p class="hint" style="margin-top:10px">用于三电压表法、日光灯电路与功率因数提高：由 U、I、P 求视在功率、功率因数、无功、阻抗、电阻、电抗，并估算补偿电容。</p>
+            <div class="formula-box">
+              <div class="fb-title">所用公式</div>
+              <ul>
+                <li>视在功率：<span class="f">S = UI</span>；功率因数：<span class="f">cosφ = P/S</span></li>
+                <li>无功功率：<span class="f">Q = √(S² − P²)</span></li>
+                <li>阻抗 / 电阻 / 电抗：<span class="f">|Z| = U/I</span>，<span class="f">R = P/I²</span>，<span class="f">X = √(|Z|² − R²)</span></li>
+                <li>阻抗换算：<span class="f">L = X/ω</span>（感性），<span class="f">C = 1/(ωX)</span>（容性），<span class="f">ω = 2πf</span></li>
+                <li>补偿电容：<span class="f">C = P/(ωU²)(tanφ₁ − tanφ₂)</span></li>
+              </ul>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-hd">计算结果</div>
+          <div class="card-bd" id="m3-result"><div class="hint">录入读数后自动计算。</div></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== 面板 4：真值表核对 ===== -->
+    <section class="panel" id="p4">
+      <div class="grid">
+        <div class="card">
+          <div class="card-hd">录入实测输出与预期输出</div>
+          <div class="card-bd">
+            <div class="field">
+              <label>输入位</label>
+              <input type="text" id="m4-inputs" value="A B C" />
+              <span class="hint">空格分隔，对应表前列</span>
+            </div>
+            <div class="field">
+              <label>输出位</label>
+              <input type="text" id="m4-outputs" value="Y" />
+            </div>
+            <table class="data">
+              <thead><tr id="m4-head"></tr></thead>
+              <tbody id="m4-rows"></tbody>
+            </table>
+            <div class="row-actions">
+              <button type="button" class="btn secondary" id="m4-add">添加一行</button>
+              <button type="button" class="btn ghost" id="m4-sample">填入示例(74LS138)</button>
+              <button type="button" class="btn ghost" id="m4-clear">清空</button>
+            </div>
+            <p class="hint" style="margin-top:10px">实测/预期填 0、1；预期留空则该行不计入核对。用于译码器、数据选择器、加法器（74LS138 / 153 / 283、BCD 加法）功能验证。</p>
+            <div class="formula-box">
+              <div class="fb-title">判定规则</div>
+              <ul>
+                <li>逐位比较：实测输出 Yⱼ 与预期输出 Yⱼ 不同，即标记该位不一致。</li>
+                <li>一致率：<span class="f">一致行数 / 已核对行数 × 100%</span>。</li>
+                <li>实测留空记为"待实测"，不计为错误；预期留空的行不参与核对。</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-hd">核对结果</div>
+          <div class="card-bd" id="m4-result"><div class="hint">录入后自动逐行比对。</div></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== 面板 5：逐差法 ===== -->
+    <section class="panel" id="p5">
+      <div class="grid">
+        <div class="card">
+          <div class="card-hd">录入等间隔测量数据（共 2n 个）</div>
+          <div class="card-bd">
+            <div class="field">
+              <label>量名称</label><input type="text" id="m5-name" value="伸长量 ΔL" />
+              <label>单位</label><input type="text" id="m5-unit" value="mm" style="width:70px" />
+            </div>
+            <div class="field">
+              <label>自变量步长</label><input type="number" id="m5-step" step="any" value="1" /><span class="hint">相邻两次自变量间隔（如每加 1 kg 砝码）</span>
+            </div>
+            <div class="field">
+              <label>仪器误差限 Δ</label><input type="number" id="m5-delta" step="any" value="0.01" />
+            </div>
+            <table class="data">
+              <thead><tr><th style="width:46px">序号</th><th>读数 xᵢ</th><th style="width:64px"></th></tr></thead>
+              <tbody id="m5-rows"></tbody>
+            </table>
+            <div class="row-actions">
+              <button type="button" class="btn secondary" id="m5-add">添加一行</button>
+              <button type="button" class="btn ghost" id="m5-sample">填入示例</button>
+              <button type="button" class="btn ghost" id="m5-clear">清空</button>
+            </div>
+            <p class="hint" style="margin-top:10px">等间隔线性测量（拉伸法测杨氏模量、牛顿环环差、电位差计校准等）：将前半组与后半组对应相减求平均差，再折算每单位间隔的变化量。</p>
+            <div class="formula-box">
+              <div class="fb-title">所用公式</div>
+              <ul>
+                <li>配对逐差：<span class="f">Δᵢ = bᵢ − aᵢ</span>（前半组 aᵢ 与后半组 bᵢ 对应相减）</li>
+                <li>平均逐差：<span class="f">Δ̄ = (1/n)ΣΔᵢ</span>；逐差标准差 <span class="f">s_Δ = √[Σ(Δᵢ−Δ̄)²/(n−1)]</span></li>
+                <li>不确定度：<span class="f">u_A = s_Δ/√n</span>，<span class="f">u_B = Δ/√3</span>，<span class="f">u_c = √(u_A² + u_B²)</span></li>
+                <li>单位间隔变化量：<span class="f">k = Δ̄/(n·Δx)</span>，<span class="f">u_k = u_c/(n·Δx)</span></li>
+              </ul>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-hd">逐差结果（可直接粘进实验报告）</div>
+          <div class="card-bd" id="m5-result"><div class="hint">录入 2n 个读数后自动计算。</div></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== 面板 6：误差传递 · 间接测量 ===== -->
+    <section class="panel" id="p6">
+      <div class="grid">
+        <div class="card">
+          <div class="card-hd">选择函数模型并录入直接测量量</div>
+          <div class="card-bd">
+            <div class="field">
+              <label>函数模型</label>
+              <select id="m6-model">
+                <option value="sum">N = A ± B（和差）</option>
+                <option value="product">N = A · B（积）</option>
+                <option value="quotient">N = A / B（商）</option>
+                <option value="power">N = Aᵖ（幂次）</option>
+                <option value="density">ρ = m / V（密度）</option>
+                <option value="pendulum">g = 4π²L / T²（单摆）</option>
+              </select>
+            </div>
+            <div class="field">
+              <label id="m6-la">A 最佳值</label><input type="number" id="m6-a" step="any" value="10.0" />
+              <label>u_A</label><input type="number" id="m6-ua" step="any" value="0.02" />
+            </div>
+            <div class="field">
+              <label id="m6-lb">B 最佳值</label><input type="number" id="m6-b" step="any" value="5.0" />
+              <label>u_B</label><input type="number" id="m6-ub" step="any" value="0.02" />
+            </div>
+            <div class="field" id="m6-p-field">
+              <label>指数 p</label><input type="number" id="m6-p" step="any" value="2" />
+            </div>
+            <p class="hint" id="m6-formula" style="margin-top:6px"></p>
+            <p class="hint" style="margin-top:10px">u_A、u_B 填各直接量的标准不确定度（已含 A/B 类合成）；和差用绝对不确定度方和根，积商幂先用相对不确定度合成。</p>
+            <div class="formula-box">
+              <div class="fb-title">所用公式（按模型）</div>
+              <ul>
+                <li>和差 <span class="f">N = A ± B</span>：<span class="f">u_N = √(u_A² + u_B²)</span></li>
+                <li>积 / 商 <span class="f">N = A·B</span> 或 <span class="f">A/B</span>：<span class="f">(u_N/N) = √((u_A/A)² + (u_B/B)²)</span></li>
+                <li>幂次 <span class="f">N = Aᵖ</span>：<span class="f">(u_N/N) = |p|·u_A/A</span></li>
+                <li>密度 <span class="f">ρ = m/V</span>：<span class="f">(u_ρ/ρ) = √((u_m/m)² + (u_V/V)²)</span></li>
+                <li>单摆 <span class="f">g = 4π²L/T²</span>：<span class="f">(u_g/g) = √((u_L/L)² + (2u_T/T)²)</span></li>
+              </ul>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-hd">间接测量结果</div>
+          <div class="card-bd" id="m6-result"><div class="hint">选择模型并录入数值后自动合成。</div></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== 面板 7：RC 一阶电路时间常数 ===== -->
+    <section class="panel" id="p7">
+      <div class="grid">
+        <div class="card">
+          <div class="card-hd">理论参数与波形读数</div>
+          <div class="card-bd">
+            <div class="sub-hd">理论计算</div>
+            <div class="field">
+              <label>电阻 R</label><input type="number" id="m7-r" step="any" value="10000" /><span class="hint">Ω</span>
+              <label>电容 C</label><input type="number" id="m7-c" step="any" value="10" /><span class="hint">μF</span>
+            </div>
+            <div class="sub-hd">波形读数反推 τ</div>
+            <div class="field">
+              <label>读数方式</label>
+              <select id="m7-mode">
+                <option value="charge">充电：到 63.2% U_s 的时刻</option>
+                <option value="discharge">放电：降到 36.8% U_s 的时刻</option>
+                <option value="rise">10% → 90% 上升 / 下降时间</option>
+              </select>
+            </div>
+            <div class="field">
+              <label id="m7-t0-label">起始时刻 t₀</label><input type="number" id="m7-t0" step="any" value="0" /><span class="hint" id="m7-t0-unit">ms</span>
+              <label id="m7-t1-label">特征时刻 t₁</label><input type="number" id="m7-t1" step="any" value="100" /><span class="hint" id="m7-t1-unit">ms</span>
+            </div>
+            <p class="hint" style="margin-top:10px">τ = RC；充电到 63.2% U_s、放电到 36.8% U_s 对应的时间即为 τ；10%→90% 过渡时间 t_r ≈ 2.2τ；约 5τ 后充放电完成 99.3%。</p>
+            <div class="formula-box">
+              <div class="fb-title">所用公式</div>
+              <ul>
+                <li>理论时间常数：<span class="f">τ = RC</span>（R 单位 Ω、C 单位 μF 时 τ/ms = R·C/1000）</li>
+                <li>波形反推：充电到 <span class="f">63.2% U_s</span>、放电到 <span class="f">36.8% U_s</span> 的时刻即为 τ</li>
+                <li>过渡时间：<span class="f">t_r ≈ 2.2τ</span>，反推 <span class="f">τ = t_r/2.2</span></li>
+                <li>充放电完成度：约 <span class="f">5τ</span> 后达到 99.3%；实测相对误差 <span class="f">|τ_obs − τ_th|/τ_th×100%</span></li>
+              </ul>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-hd">时间常数结果</div>
+          <div class="card-bd" id="m7-result"><div class="hint">录入 R、C 与波形读数后自动计算。</div></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== 面板 8：光学干涉计算 ===== -->
+    <section class="panel" id="p8">
+      <div class="grid">
+        <div class="card">
+          <div class="card-hd">选择实验并录入读数</div>
+          <div class="card-bd">
+            <div class="field">
+              <label>实验类型</label>
+              <select id="m8-mode">
+                <option value="wedge">空气劈尖 · 细丝直径</option>
+                <option value="film">增透膜 · 最小厚度</option>
+                <option value="newton">牛顿环 · 曲率半径</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>波长 λ</label><input type="number" id="m8-lambda" step="any" value="546.0" /><span class="hint">nm</span>
+            </div>
+            <div class="field" id="m8-wedge-fields">
+              <label>劈尖长度 L</label><input type="number" id="m8-l" step="any" value="124.0" /><span class="hint">mm</span>
+              <label>条纹间距 l</label><input type="number" id="m8-strip" step="any" value="1.50" /><span class="hint">mm</span>
+            </div>
+            <div class="field hidden" id="m8-film-fields">
+              <label>膜折射率 n₂</label><input type="number" id="m8-n2" step="any" value="1.30" />
+            </div>
+            <div class="field hidden" id="m8-newton-fields">
+              <label>d_k 直径</label><input type="number" id="m8-dk" step="any" value="0.70" /><span class="hint">mm</span>
+              <label>d_{k+m} 直径</label><input type="number" id="m8-dkm" step="any" value="2.20" /><span class="hint">mm</span>
+              <label>环序数差 m</label><input type="number" id="m8-m" step="any" value="15" />
+              <label>介质折射率 n</label><input type="number" id="m8-n" step="any" value="1.00" />
+            </div>
+            <div class="formula-box">
+              <div class="fb-title">所用公式（按实验）</div>
+              <ul>
+                <li>空气劈尖：<span class="f">D = λL/(2l)</span>（相邻条纹厚度差 λ/2）</li>
+                <li>增透膜：最小厚度 <span class="f">e_min = λ/(4n₂)</span>；通解 <span class="f">e = (2k+1)λ/(4n₂)</span>，k = 0, 1, 2, …</li>
+                <li>牛顿环：<span class="f">R = (d²_{k+m} − d_k²)·n/(4mλ)</span>，充液时 n 取介质折射率</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-hd">计算结果</div>
+          <div class="card-bd" id="m8-result"><div class="hint">选择实验并录入读数后自动计算。</div></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== 面板 9：基础计算器 ===== -->
+    <section class="panel active" id="p9">
+      <div class="grid">
+        <div class="card">
+          <div class="card-hd">表达式计算</div>
+          <div class="card-bd">
+            <div class="field">
+              <label>角度单位</label>
+              <select id="m9-angle">
+                <option value="rad">弧度 rad</option>
+                <option value="deg">角度 °</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>表达式</label>
+              <input type="text" id="m9-expr" class="wide" placeholder="如 2*sin(30°)+sqrt(2)/2 或 (3+4)^2 / 5!" />
+            </div>
+            <div class="row-actions">
+              <button type="button" class="btn" id="m9-calc">计算</button>
+              <button type="button" class="btn ghost" id="m9-sample">填入示例</button>
+              <button type="button" class="btn ghost" id="m9-clear">清空</button>
+            </div>
+            <div class="formula-box">
+              <div class="fb-title">所用公式与规则</div>
+              <ul>
+                <li>优先级：<span class="f">括号 ()</span> &gt; 函数 / 阶乘 <span class="f">!</span> &gt; 幂 <span class="f">^</span> &gt; 乘除 <span class="f">* /</span> &gt; 加减 <span class="f">+ −</span>；幂右结合。</li>
+                <li>四则：<span class="f">a+b、a−b、a*b、a/b</span>；幂 <span class="f">a^b</span>；开方 <span class="f">sqrt(a)</span>。</li>
+                <li>函数：<span class="f">sin cos tan asin acos atan ln log10 exp abs</span>；角度模式下三角函数先把角度换算成弧度再计算。</li>
+                <li>常数：<span class="f">π（pi）</span>、<span class="f">e</span>；阶乘 <span class="f">n! = 1·2·…·n</span>（非负整数，n ≤ 170）。</li>
+                <li>支持隐式乘法：<span class="f">2π、2(3+4)、(a)(b)</span> 均按相乘处理。</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+        <div>
+          <div class="card">
+            <div class="card-hd">计算结果</div>
+            <div class="card-bd" id="m9-result"><div class="hint">输入表达式后自动计算。</div></div>
+          </div>
+          <div class="card" style="margin-top:16px">
+            <div class="card-hd">最近记录（点击回填）</div>
+            <div class="card-bd" id="m9-hist"><div class="hint">暂无记录。</div></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== 面板 10：函数作图 · 采样表 ===== -->
+    <section class="panel" id="p10">
+      <div class="grid">
+        <div class="card">
+          <div class="card-hd">定义函数与采样区间</div>
+          <div class="card-bd">
+            <div class="field">
+              <label>y = f(x)</label>
+              <input type="text" id="m10-f" class="wide" value="sin(x)" />
+            </div>
+            <div class="field">
+              <label>x 下限</label><input type="number" id="m10-xmin" step="any" value="0" />
+              <label>x 上限</label><input type="number" id="m10-xmax" step="any" value="6.2832" />
+              <label>采样点数</label><input type="number" id="m10-n" step="1" min="2" value="21" />
+            </div>
+            <div class="field">
+              <label>角度单位</label>
+              <select id="m10-angle">
+                <option value="rad">弧度 rad</option>
+                <option value="deg">角度 °</option>
+              </select>
+            </div>
+            <div class="row-actions">
+              <button type="button" class="btn" id="m10-run">生成曲线与表格</button>
+              <button type="button" class="btn ghost" id="m10-sample">填入示例</button>
+              <button type="button" class="btn ghost" id="m10-clear">清空</button>
+            </div>
+            <div class="formula-box">
+              <div class="fb-title">所用公式与规则</div>
+              <ul>
+                <li>等间隔采样：<span class="f">x_i = x_min + i·(x_max − x_min)/(N − 1)</span>，<span class="f">i = 0, 1, …, N−1</span>。</li>
+                <li>逐点求值：<span class="f">y_i = f(x_i)</span>，表达式语法与基础计算器一致（含 sin/cos/ln/sqrt/π/e/幂/括号）。</li>
+                <li>作图：横轴为 x、纵轴为 y，折线连接各采样点；表格列出全部 <span class="f">(x_i, y_i)</span>，可复制或导出 CSV。</li>
+                <li>区间内函数无定义（除零、负数开方等）的点记为空，不参与最值统计。</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+        <div>
+          <div class="card">
+            <div class="card-hd">函数曲线</div>
+            <div class="card-bd chart-box" id="m10-chart"><div class="hint">生成后在此显示曲线。</div></div>
+          </div>
+          <div class="card" style="margin-top:16px">
+            <div class="card-hd">采样数据与统计</div>
+            <div class="card-bd" id="m10-result"><div class="hint">点击"生成曲线与表格"后输出。</div></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== 面板 11：单位换算 ===== -->
+    <section class="panel" id="p11">
+      <div class="grid">
+        <div class="card">
+          <div class="card-hd">选择类别与单位</div>
+          <div class="card-bd">
+            <div class="field">
+              <label>量类别</label>
+              <select id="m11-cat">
+                <option value="length">长度</option>
+                <option value="mass">质量</option>
+                <option value="time">时间</option>
+                <option value="temp">温度</option>
+                <option value="pressure">压力 / 压强</option>
+                <option value="area">面积</option>
+                <option value="volume">体积</option>
+                <option value="speed">速度</option>
+                <option value="data">数据存储</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>从</label><select id="m11-from"></select>
+              <label>到</label><select id="m11-to"></select>
+              <button type="button" class="btn ghost" id="m11-swap">交换 ⇄</button>
+            </div>
+            <div class="field">
+              <label>输入数值</label><input type="number" id="m11-value" step="any" value="1" class="wide" />
+            </div>
+            <div class="formula-box">
+              <div class="fb-title">所用公式与规则</div>
+              <ul>
+                <li>一般物理量：<span class="f">目标值 = 输入值 × k_from / k_to</span>，其中 k 为该单位相对基准单位的换算因子。</li>
+                <li>温度为非线性换算：<span class="f">°F = °C×9/5 + 32</span>；<span class="f">K = °C + 273.15</span>；<span class="f">°C = (°F − 32)×5/9</span>。</li>
+                <li>数据存储按 1024 进制（1 KB = 1024 B）；bit 为位，Byte 为字节。</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-hd">换算结果</div>
+          <div class="card-bd" id="m11-result"><div class="hint">选择单位并录入数值后自动换算。</div></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== 面板 12：描述统计 ===== -->
+    <section class="panel" id="p12">
+      <div class="grid">
+        <div class="card">
+          <div class="card-hd">录入样本数据</div>
+          <div class="card-bd">
+            <div class="field">
+              <label>量名称</label><input type="text" id="m12-name" value="测量值 x" />
+              <label>单位</label><input type="text" id="m12-unit" value="" style="width:70px" />
+            </div>
+            <table class="data">
+              <thead><tr><th style="width:46px">序号</th><th>样本值 xᵢ</th><th style="width:64px"></th></tr></thead>
+              <tbody id="m12-rows"></tbody>
+            </table>
+            <div class="row-actions">
+              <button type="button" class="btn secondary" id="m12-add">添加一行</button>
+              <button type="button" class="btn ghost" id="m12-paste">粘贴批量</button>
+              <button type="button" class="btn ghost" id="m12-sample">填入示例</button>
+              <button type="button" class="btn ghost" id="m12-clear">清空</button>
+            </div>
+            <div class="formula-box">
+              <div class="fb-title">所用公式</div>
+              <ul>
+                <li>平均值：<span class="f">x̄ = (1/n) Σxᵢ</span>；中位数：排序后中间值（偶数取中间两数平均）</li>
+                <li>样本方差 / 标准差：<span class="f">s² = Σ(xᵢ−x̄)²/(n−1)</span>，<span class="f">s = √s²</span></li>
+                <li>总体方差 / 标准差：<span class="f">σ² = Σ(xᵢ−x̄)²/n</span>，<span class="f">σ = √σ²</span></li>
+                <li>四分位 Q1、Q3 与四分位距 <span class="f">IQR = Q3 − Q1</span>；极差 <span class="f">R = x_max − x_min</span></li>
+                <li>95% 置信区间：<span class="f">x̄ ± t_{0.95}(n−1)·s/√n</span></li>
+              </ul>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-hd">统计结果</div>
+          <div class="card-bd" id="m12-result"><div class="hint">录入样本后自动计算。</div></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== 面板 13：异常值判别 ===== -->
+    <section class="panel" id="p13">
+      <div class="grid">
+        <div class="card">
+          <div class="card-hd">录入样本并选择判别方法</div>
+          <div class="card-bd">
+            <div class="field">
+              <label>判别方法</label>
+              <select id="m13-method">
+                <option value="sigma3">3σ 准则（格拉布斯粗判）</option>
+                <option value="grubbs" selected>格拉布斯 Grubbs（α=0.05）</option>
+                <option value="dixon">狄克逊 Dixon Q 检验（n=3~10）</option>
+              </select>
+            </div>
+            <table class="data">
+              <thead><tr><th style="width:46px">序号</th><th>样本值 xᵢ</th><th style="width:64px"></th></tr></thead>
+              <tbody id="m13-rows"></tbody>
+            </table>
+            <div class="row-actions">
+              <button type="button" class="btn secondary" id="m13-add">添加一行</button>
+              <button type="button" class="btn ghost" id="m13-paste">粘贴批量</button>
+              <button type="button" class="btn ghost" id="m13-sample">填入示例</button>
+              <button type="button" class="btn ghost" id="m13-clear">清空</button>
+            </div>
+            <div class="formula-box">
+              <div class="fb-title">判别公式与判据</div>
+              <ul>
+                <li>3σ 准则：<span class="f">|xᵢ − x̄| &gt; 3s</span> 判为可疑值。</li>
+                <li>Grubbs：<span class="f">G = max|xᵢ − x̄|/s</span>，G &gt; G_crit(n, 0.05) 判为可疑值。</li>
+                <li>Dixon Q：<span class="f">Q = 相邻差值 / 极差</span>，Q &gt; Q_crit(n, 0.05) 判为可疑值。</li>
+                <li>可疑值剔除后应重新计算，不可连续剔除；本工具仅给判别建议，最终以实验规则为准。</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-hd">判别结果</div>
+          <div class="card-bd" id="m13-result"><div class="hint">录入样本并选择方法后自动判别。</div></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== 面板 14：非线性拟合 ===== -->
+    <section class="panel" id="p14">
+      <div class="grid">
+        <div class="card">
+          <div class="card-hd">录入配对数据 (x, y) 并选择模型</div>
+          <div class="card-bd">
+            <div class="field">
+              <label>拟合模型</label>
+              <select id="m14-model">
+                <option value="exp">指数型 y = a·e^(b·x)</option>
+                <option value="power">幂函数 y = a·x^b</option>
+                <option value="log">对数型 y = a + b·ln(x)</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>x 名称</label><input type="text" id="m14-xname" value="x" />
+              <label>x 单位</label><input type="text" id="m14-xunit" value="" style="width:70px" />
+            </div>
+            <div class="field">
+              <label>y 名称</label><input type="text" id="m14-yname" value="y" />
+              <label>y 单位</label><input type="text" id="m14-yunit" value="" style="width:70px" />
+            </div>
+            <table class="data">
+              <thead><tr><th style="width:46px">序号</th><th>x</th><th>y</th><th style="width:64px"></th></tr></thead>
+              <tbody id="m14-rows"></tbody>
+            </table>
+            <div class="row-actions">
+              <button type="button" class="btn secondary" id="m14-add">添加一行</button>
+              <button type="button" class="btn ghost" id="m14-paste">粘贴批量</button>
+              <button type="button" class="btn ghost" id="m14-sample">填入示例</button>
+              <button type="button" class="btn ghost" id="m14-clear">清空</button>
+            </div>
+            <div class="formula-box">
+              <div class="fb-title">线性化与拟合公式</div>
+              <ul>
+                <li>指数型：<span class="f">Y = ln y = ln a + b·x</span>，对 (x, ln y) 最小二乘，<span class="f">a = e^(截距)</span>。</li>
+                <li>幂函数：<span class="f">Y = ln y，X = ln x，Y = ln a + b·X</span>。</li>
+                <li>对数型：<span class="f">X = ln x，y = a + b·X</span>。</li>
+                <li>在变换后坐标下求最小二乘直线与 R²；残差按原始 y 计算。</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+        <div>
+          <div class="card">
+            <div class="card-hd">拟合结果</div>
+            <div class="card-bd" id="m14-result"><div class="hint">录入配对数据后自动拟合。</div></div>
+          </div>
+          <div class="card" style="margin-top:16px">
+            <div class="card-hd">散点与拟合曲线</div>
+            <div class="card-bd chart-box" id="m14-chart"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== 面板 15：修约 · t 因子 ===== -->
+    <section class="panel" id="p15">
+      <div class="grid">
+        <div class="card">
+          <div class="card-hd">录入最佳值与标准不确定度</div>
+          <div class="card-bd">
+            <div class="field">
+              <label>最佳值 x̄</label><input type="number" id="m15-xbar" step="any" />
+              <label>标准不确定度 u_c</label><input type="number" id="m15-uc" step="any" />
+            </div>
+            <div class="field">
+              <label>测量次数 n</label><input type="number" id="m15-n" step="any" value="6" style="width:90px" />
+              <label>置信概率</label>
+              <select id="m15-conf">
+                <option value="68">68%（k=1）</option>
+                <option value="95" selected>95%（t_{0.95}）</option>
+                <option value="99">99%（t_{0.99}）</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>量名称</label><input type="text" id="m15-name" value="x" />
+              <label>单位</label><input type="text" id="m15-unit" value="" style="width:70px" />
+            </div>
+            <div class="formula-box">
+              <div class="fb-title">所用公式与修约规则</div>
+              <ul>
+                <li>扩展不确定度：<span class="f">U = t·u_c</span>，t 为按自由度 ν = n−1 查得的 t 分布包含因子。</li>
+                <li>68% 置信概率取 k=1；95%、99% 按 t 分布表取值，ν≥30 时近似正态（1.96 / 2.58）。</li>
+                <li>修约：U 通常取 1~2 位有效数字；最佳值末位与 U 末位对齐。</li>
+                <li>结果表示：<span class="f">x = (x̄ ± U) 单位</span>，并注明包含因子 / 置信概率。</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-hd">修约结果与标准表示</div>
+          <div class="card-bd" id="m15-result"><div class="hint">录入最佳值与 u_c 后自动修约。</div></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== 面板 16：数电工具 ===== -->
+    <section class="panel" id="p16">
+      <div class="grid">
+        <div class="card">
+          <div class="card-hd">数电计算工具</div>
+          <div class="card-bd">
+            <div class="seg" id="m16-seg">
+              <button type="button" class="active" data-sub="conv">进制互转</button>
+              <button type="button" data-sub="expr">表达式 → 真值表</button>
+              <button type="button" data-sub="kmap">卡诺图化简</button>
+              <button type="button" data-sub="code">编码 / 译码真值表</button>
+            </div>
+            <div id="m16-conv">
+              <div class="field">
+                <label>原进制</label>
+                <select id="m16-conv-base">
+                  <option value="10">十进制</option>
+                  <option value="2">二进制</option>
+                  <option value="8">八进制</option>
+                  <option value="16">十六进制</option>
+                </select>
+              </div>
+              <div class="field"><label>数值</label><input type="text" id="m16-conv-val" class="wide" value="2026" /></div>
+            </div>
+            <div id="m16-expr-wrap" class="hidden">
+              <div class="field"><label>逻辑表达式</label><input type="text" id="m16-expr" class="wide" placeholder="如 (A&amp;B)|(!C)" /></div>
+              <p class="hint">变量 A B C D（大小写均可）；`!` 非，`&` 与，`|` 或，`^` 异或，括号分组。</p>
+            </div>
+            <div id="m16-kmap" class="hidden">
+              <div class="field">
+                <label>变量数</label>
+                <select id="m16-kmap-vars">
+                  <option value="2">2 变量</option>
+                  <option value="3">3 变量</option>
+                  <option value="4" selected>4 变量</option>
+                </select>
+              </div>
+              <div class="field"><label>最小项 m</label><input type="text" id="m16-minterms" class="wide" placeholder="如 0,1,2,3,4,5" /></div>
+            </div>
+            <div id="m16-code" class="hidden">
+              <div class="field">
+                <label>预设表</label>
+                <select id="m16-code-preset">
+                  <option value="bcd8421">BCD 8421 码表（0~9）</option>
+                  <option value="dec38">3-8 译码器（低有效输出）</option>
+                  <option value="enc42">4-2 编码器（高有效）</option>
+                </select>
+              </div>
+            </div>
+            <div class="formula-box">
+              <div class="fb-title">说明</div>
+              <ul>
+                <li>进制互转：按所选进制解析，给出二 / 八 / 十 / 十六进制结果。</li>
+                <li>表达式 → 真值表：枚举变量所有 0/1 组合，按逻辑运算求值。</li>
+                <li>卡诺图化简：按最小项做奎因-麦克拉斯基化简，输出最简与或式（SOP）。</li>
+                <li>编码 / 译码表为常用教学预设，可直接复制到报告。</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-hd">计算结果</div>
+          <div class="card-bd" id="m16-result"><div class="hint">选择工具并录入后自动计算。</div></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== 面板 17：实验报告生成 ===== -->
+    <section class="panel" id="p17">
+      <div class="grid">
+        <div class="card">
+          <div class="card-hd">报告设置</div>
+          <div class="card-bd">
+            <div class="field"><label>实验名称</label><input type="text" id="m17-title" class="wide" value="理工科实验数据处理报告" /></div>
+            <div class="field"><label>日期</label><input type="text" id="m17-date" class="wide" /></div>
+            <p class="hint">报告自动汇总你在各模块中已经计算出的结果表与图表；未计算的模块不纳入。可直接打印或另存为 PDF。</p>
+            <div class="row-actions report-tools">
+              <button type="button" class="btn secondary" id="m17-refresh">刷新报告</button>
+              <button type="button" class="btn" id="m17-print">打印 / 存 PDF</button>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-hd">报告预览</div>
+          <div class="card-bd" id="m17-result"><div class="hint">点击"刷新报告"生成。</div></div>
+        </div>
+      </div>
+    </section>
+
+    <p class="footnote">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3h18v18H3z"/><path d="M3 9h18M9 21V9"/></svg>
+      所有计算均在浏览器本地完成，不上传任何数据；不确定度按大学物理 / 电路实验常用口径评定。
+    </p>
+  </main>
+
+  <script>
+  (function () {
+    'use strict';
+
+    // ===== 通用工具 =====
+    function $(id) { return document.getElementById(id); }
+    function num(v) {
+      if (v == null) return NaN;
+      var s = String(v).trim();
+      if (s === '') return NaN;
+      var n = Number(s.replace(/[^\d.\-]/g, ''));
+      return Number.isFinite(n) ? n : NaN;
+    }
+    function fmt(n, d) {
+      if (n == null || !Number.isFinite(n)) return '—';
+      var digits = d == null ? 4 : d;
+      return Number(n).toFixed(digits);
+    }
+    function esc(s) {
+      return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+        return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+      });
+    }
+    function mean(arr) { return arr.reduce(function (a, b) { return a + b; }, 0) / arr.length; }
+
+    // ===== 模式切换 =====
+    var tabs = document.querySelectorAll('.tab');
+    tabs.forEach(function (t) {
+      t.addEventListener('click', function () {
+        tabs.forEach(function (x) { x.classList.remove('active'); });
+        document.querySelectorAll('.panel').forEach(function (p) { p.classList.remove('active'); });
+        t.classList.add('active');
+        $(t.dataset.panel).classList.add('active');
+      });
+    });
+
+    // ===== 结果表构建助手 =====
+    function resTable(rows) {
+      var html = '<table class="res-table">';
+      rows.forEach(function (r) {
+        html += '<tr><th>' + esc(r.label) + '</th><td class="num">' + esc(r.value) + '</td></tr>';
+      });
+      html += '</table>';
+      return html;
+    }
+
+    // ===== 修约与数值助手 =====
+    function roundTo(x, dec) {
+      if (!Number.isFinite(x)) return x;
+      var f = Math.pow(10, dec);
+      return Math.round(x * f) / f;
+    }
+    function uDecimals(U) {
+      if (!Number.isFinite(U) || U <= 0) return 1;
+      var mag = Math.floor(Math.log10(U));
+      var norm = U / Math.pow(10, mag);
+      var sig = norm < 2 ? 2 : 1;
+      return Math.max(0, -mag + sig - 1);
+    }
+    function pct(n) { return Number.isFinite(n) ? n.toFixed(2) + '%' : '—'; }
+
+    // ===== 模块 1：重复测量 · 不确定度评定 =====
+    var m1 = { rows: [] };
+
+    function m1Row(value) {
+      var tr = document.createElement('tr');
+      tr.innerHTML =
+        '<td class="num hint"></td>' +
+        '<td><input type="number" step="any" class="m1-x" /></td>' +
+        '<td><button type="button" class="btn ghost m1-del" title="删除该行">删</button></td>';
+      tr.querySelector('.m1-x').value = value == null ? '' : value;
+      return tr;
+    }
+    function m1RebuildIndex() {
+      Array.prototype.forEach.call($('m1-rows').rows, function (tr, i) {
+        tr.cells[0].textContent = i + 1;
+      });
+    }
+    function m1AddRow(value) {
+      $('m1-rows').appendChild(m1Row(value));
+      m1RebuildIndex();
+      m1Compute();
+    }
+    function m1Readings() {
+      return Array.prototype.map.call(document.querySelectorAll('.m1-x'), function (i) { return num(i.value); })
+        .filter(function (n) { return Number.isFinite(n); });
+    }
+    function m1Compute() {
+      var vals = m1Readings();
+      var box = $('m1-result');
+      if (vals.length < 1) { box.innerHTML = '<div class="hint">录入读数后自动计算。</div>'; return; }
+
+      var n = vals.length;
+      var xbar = mean(vals);
+      var resid = vals.map(function (x) { return x - xbar; });
+      var ss = resid.reduce(function (a, v) { return a + v * v; }, 0);
+      var s = n > 1 ? Math.sqrt(ss / (n - 1)) : 0;
+      var uA = s / Math.sqrt(n);
+
+      var delta = num($('m1-delta').value);
+      var c = parseFloat($('m1-dist').value) || 1.732;
+      var uB = Number.isFinite(delta) && delta > 0 ? delta / c : 0;
+      var uc = Math.sqrt(uA * uA + uB * uB);
+      var k = num($('m1-k').value); if (!Number.isFinite(k) || k <= 0) k = 2;
+      var U = k * uc;
+      var Er = xbar !== 0 ? Math.abs(U / xbar) * 100 : NaN;
+
+      var truth = num($('m1-truth').value);
+      var hasTruth = Number.isFinite(truth);
+      var absErr = hasTruth ? Math.abs(xbar - truth) : NaN;
+      var relErr = hasTruth && truth !== 0 ? absErr / Math.abs(truth) * 100 : NaN;
+
+      var dec = uDecimals(U);
+      var name = $('m1-name').value.trim() || 'x';
+      var unit = $('m1-unit').value.trim();
+
+      // 明细行
+      var det = '<table class="data"><thead><tr><th>序号</th><th class="num">读数 xᵢ</th><th class="num">残差 vᵢ</th><th class="num">vᵢ²</th></tr></thead><tbody>';
+      vals.forEach(function (x, i) {
+        det += '<tr><td class="num">' + (i + 1) + '</td><td class="num">' + fmt(x, 4) + '</td><td class="num">' + fmt(resid[i], 4) + '</td><td class="num">' + fmt(resid[i] * resid[i], 6) + '</td></tr>';
+      });
+      det += '</tbody></table>';
+
+      var rows = [
+        { label: '测量次数 n', value: String(n) },
+        { label: '平均值 x̄', value: fmt(xbar, 4) + (unit ? ' ' + unit : '') },
+        { label: '实验标准差 s（贝塞尔）', value: fmt(s, 4) },
+        { label: 'A 类标准不确定度 u_A = s/√n', value: fmt(uA, 4) },
+        { label: 'B 类标准不确定度 u_B = Δ/c', value: fmt(uB, 4) },
+        { label: '合成标准不确定度 u_c', value: fmt(uc, 4) },
+        { label: '扩展不确定度 U = k·u_c（k=' + fmt(k, 2) + '）', value: fmt(U, 4) },
+        { label: '相对不确定度 E_r', value: pct(Er) }
+      ];
+      if (hasTruth) {
+        rows.push({ label: '绝对误差 |x̄−x₀|', value: fmt(absErr, 4) + (unit ? ' ' + unit : '') });
+        rows.push({ label: '相对误差 δ', value: pct(relErr) });
+      }
+
+      var expr = 'x̄ = ' + fmt(xbar, 4) + (unit ? ' ' + unit : '') + '，U = ' + fmt(U, 4) +
+        '（k=' + fmt(k, 2) + '）；修约表示：' + name + ' = (' + roundTo(xbar, dec) + ' ± ' + roundTo(U, dec) + ')' + (unit ? ' ' + unit : '') +
+        '，E_r = ' + pct(Er) + '。';
+      if (hasTruth) expr += ' 与标准值相对误差 δ = ' + pct(relErr) + '。';
+
+      box.innerHTML =
+        '<div class="stat-row">' +
+          '<div class="stat"><div class="n">' + n + '</div><div class="l">次数</div></div>' +
+          '<div class="stat"><div class="n">' + fmt(xbar, 4) + '</div><div class="l">平均值' + (unit ? ' / ' + unit : '') + '</div></div>' +
+          '<div class="stat"><div class="n">' + fmt(U, 4) + '</div><div class="l">扩展不确定度 U</div></div>' +
+          '<div class="stat"><div class="n">' + pct(Er) + '</div><div class="l">相对不确定度</div></div>' +
+        '</div>' +
+        resTable(rows) +
+        '<div style="margin-top:12px">' + det + '</div>' +
+        '<p class="hint" style="margin-top:12px">' + esc(expr) + '</p>' +
+        '<div class="row-actions"><button type="button" class="btn secondary" data-copy="m1">复制结果表</button>' +
+        '<button type="button" class="btn secondary" data-csv="m1">导出 CSV</button></div>';
+
+      m1._summary = rows; m1._detail = vals.map(function (x, i) { return [i + 1, x, resid[i], resid[i] * resid[i]]; });
+      m1._expr = expr;
+    }
+
+    $('m1-add').addEventListener('click', function () { m1AddRow(); });
+    $('m1-rows').addEventListener('click', function (e) {
+      if (e.target.classList.contains('m1-del')) { e.target.closest('tr').remove(); m1RebuildIndex(); m1Compute(); }
+    });
+    $('m1-rows').addEventListener('input', m1Compute);
+    ['m1-delta', 'm1-dist', 'm1-truth', 'm1-k', 'm1-name', 'm1-unit'].forEach(function (id) {
+      $(id).addEventListener('input', m1Compute);
+    });
+    $('m1-sample').addEventListener('click', function () {
+      $('m1-rows').innerHTML = '';
+      [10.21, 10.18, 10.25, 10.19, 10.22, 10.17].forEach(function (v) { m1AddRow(v); });
+      $('m1-truth').value = '10.20'; $('m1-delta').value = '0.05';
+      m1Compute();
+    });
+    $('m1-clear').addEventListener('click', function () {
+      $('m1-rows').innerHTML = '';
+      for (var i = 0; i < 6; i++) m1AddRow();
+      m1Compute();
+    });
+    $('m1-paste').addEventListener('click', function () {
+      openPasteModal(function (cells) { cells.map(function (c) { return c[0]; }).forEach(function (v) { m1AddRow(v); }); m1Compute(); });
+    });
+    for (var i = 0; i < 6; i++) m1AddRow();
+    // ===== 模块 2：一元线性拟合 =====
+    var m2 = {};
+    function m2Row(x, y) {
+      var tr = document.createElement('tr');
+      tr.innerHTML =
+        '<td class="num hint"></td>' +
+        '<td><input type="number" step="any" class="m2-x" /></td>' +
+        '<td><input type="number" step="any" class="m2-y" /></td>' +
+        '<td><button type="button" class="btn ghost m2-del" title="删除该行">删</button></td>';
+      tr.querySelector('.m2-x').value = x == null ? '' : x;
+      tr.querySelector('.m2-y').value = y == null ? '' : y;
+      return tr;
+    }
+    function m2RebuildIndex() {
+      Array.prototype.forEach.call($('m2-rows').rows, function (tr, i) { tr.cells[0].textContent = i + 1; });
+    }
+    function m2AddRow(x, y) { $('m2-rows').appendChild(m2Row(x, y)); m2RebuildIndex(); m2Compute(); }
+    function m2Pairs() {
+      var rows = document.querySelectorAll('#m2-rows tr');
+      var out = [];
+      Array.prototype.forEach.call(rows, function (tr) {
+        var xv = num(tr.querySelector('.m2-x').value), yv = num(tr.querySelector('.m2-y').value);
+        if (Number.isFinite(xv) && Number.isFinite(yv)) out.push({ x: xv, y: yv });
+      });
+      return out;
+    }
+
+    function m2Compute() {
+      var box = $('m2-result'), chart = $('m2-chart');
+      var pairs = m2Pairs();
+      if (pairs.length < 2) { box.innerHTML = '<div class="hint">至少需要两组有效 (x, y) 数据。</div>'; chart.innerHTML = ''; return; }
+
+      var n = pairs.length;
+      var sx = pairs.reduce(function (a, p) { return a + p.x; }, 0);
+      var sy = pairs.reduce(function (a, p) { return a + p.y; }, 0);
+      var sxx = pairs.reduce(function (a, p) { return a + p.x * p.x; }, 0);
+      var syy = pairs.reduce(function (a, p) { return a + p.y * p.y; }, 0);
+      var sxy = pairs.reduce(function (a, p) { return a + p.x * p.y; }, 0);
+      var xbar = sx / n, ybar = sy / n;
+      var Lxx = sxx - sx * sx / n, Lyy = syy - sy * sy / n, Lxy = sxy - sx * sy / n;
+
+      if (Lxx <= 0) { box.innerHTML = '<div class="hint">x 数据无变化，无法拟合直线。</div>'; chart.innerHTML = ''; return; }
+
+      var b = Lxy / Lxx, a = ybar - b * xbar;
+      var r = Lyy > 0 ? Lxy / Math.sqrt(Lxx * Lyy) : NaN;
+      var r2 = Number.isFinite(r) ? r * r : NaN;
+      var fitted = pairs.map(function (p) { return { x: p.x, y: p.y, yhat: a + b * p.x, resid: p.y - (a + b * p.x) }; });
+      var ssRes = fitted.reduce(function (s, p) { return s + p.resid * p.resid; }, 0);
+      var sy2 = n > 2 ? Math.sqrt(ssRes / (n - 2)) : NaN;
+      var ub = Number.isFinite(sy2) ? sy2 / Math.sqrt(Lxx) : NaN;
+      var ua = Number.isFinite(sy2) ? sy2 * Math.sqrt(1 / n + xbar * xbar / Lxx) : NaN;
+
+      var xname = $('m2-xname').value.trim() || 'x', xunit = $('m2-xunit').value.trim();
+      var yname = $('m2-yname').value.trim() || 'y', yunit = $('m2-yunit').value.trim();
+
+      var rows = [
+        { label: '数据组数 n', value: String(n) },
+        { label: 'x̄', value: fmt(xbar, 4) },
+        { label: 'ȳ', value: fmt(ybar, 4) },
+        { label: '斜率 b', value: fmt(b, 4) + ' ± ' + fmt(ub, 4) },
+        { label: '截距 a', value: fmt(a, 4) + ' ± ' + fmt(ua, 4) },
+        { label: '相关系数 r', value: fmt(r, 4) },
+        { label: '决定系数 R²', value: fmt(r2, 4) },
+        { label: '残差标准差 s_{y/x}', value: fmt(sy2, 4) }
+      ];
+      var eq = yname + ' = (' + fmt(a, 4) + ') + (' + fmt(b, 4) + ')·' + xname +
+        (yunit ? ' （单位：' + yunit + '）' : '');
+
+      box.innerHTML = resTable(rows) +
+        '<p class="hint" style="margin-top:12px">拟合方程：<span class="tag">' + esc(eq) + '</span>　r = ' + fmt(r, 4) +
+        '（|r| 越接近 1 线性越好）。</p>' +
+        '<div style="margin-top:10px"><table class="data"><thead><tr><th>序号</th><th class="num">' + esc(xname) + '</th><th class="num">' + esc(yname) + '</th><th class="num">拟合 ŷ</th><th class="num">残差</th></tr></thead><tbody>' +
+        fitted.map(function (p, i) {
+          return '<tr><td class="num">' + (i + 1) + '</td><td class="num">' + fmt(p.x, 4) + '</td><td class="num">' + fmt(p.y, 4) + '</td><td class="num">' + fmt(p.yhat, 4) + '</td><td class="num">' + fmt(p.resid, 4) + '</td></tr>';
+        }).join('') + '</tbody></table></div>' +
+        '<div class="row-actions"><button type="button" class="btn secondary" data-copy="m2">复制结果表</button>' +
+        '<button type="button" class="btn secondary" data-csv="m2">导出 CSV</button>' +
+        '<button type="button" class="btn ghost" data-svg="m2">保存 SVG 图</button>' +
+        '<button type="button" class="btn ghost" data-png="m2">保存 PNG</button></div>';
+
+      m2._rows = rows; m2._fitted = fitted; m2._eq = eq;
+      m2._meta = { xname: xname, xunit: xunit, yname: yname, yunit: yunit, a: a, b: b, r: r };
+      m2DrawChart(pairs, a, b);
+    }
+
+    function m2DrawChart(pairs, a, b) {
+      var W = 640, H = 420, ml = 58, mr = 18, mt = 18, mb = 44;
+      var xs = pairs.map(function (p) { return p.x; }), ys = pairs.map(function (p) { return p.y; });
+      var xmin = Math.min.apply(null, xs), xmax = Math.max.apply(null, xs);
+      var ymin = Math.min.apply(null, ys), ymax = Math.max.apply(null, ys);
+      var xpad = (xmax - xmin) * 0.12 || 1, ypad = (ymax - ymin) * 0.12 || 1;
+      xmin -= xpad; xmax += xpad; ymin -= ypad; ymax += ypad;
+      function sx(x) { return ml + (x - xmin) / (xmax - xmin) * (W - ml - mr); }
+      function sy(y) { return H - mb - (y - ymin) / (ymax - ymin) * (H - mt - mb); }
+
+      var grid = '';
+      var ticks = 4;
+      for (var i = 0; i <= ticks; i++) {
+        var gx = xmin + (xmax - xmin) * i / ticks;
+        var gy = ymin + (ymax - ymin) * i / ticks;
+        grid += '<line x1="' + sx(gx) + '" y1="' + mt + '" x2="' + sx(gx) + '" y2="' + (H - mb) + '" stroke="#1c2836" stroke-width="1"/>';
+        grid += '<text x="' + sx(gx) + '" y="' + (H - mb + 18) + '" font-size="11" fill="#8298ac" text-anchor="middle">' + fmt(gx, 2) + '</text>';
+        grid += '<line x1="' + ml + '" y1="' + sy(gy) + '" x2="' + (W - mr) + '" y2="' + sy(gy) + '" stroke="#1c2836" stroke-width="1"/>';
+        grid += '<text x="' + (ml - 8) + '" y="' + (sy(gy) + 4) + '" font-size="11" fill="#8298ac" text-anchor="end">' + fmt(gy, 2) + '</text>';
+      }
+      var line = '<line x1="' + sx(xmin) + '" y1="' + sy(a + b * xmin) + '" x2="' + sx(xmax) + '" y2="' + sy(a + b * xmax) + '" stroke="#2dd4bf" stroke-width="2"/>';
+      var dots = pairs.map(function (p) {
+        return '<circle cx="' + sx(p.x) + '" cy="' + sy(p.y) + '" r="4" fill="#f5b13d"/>';
+      }).join('');
+      var m = m2._meta || {};
+      var svg = '<svg class="chart" viewBox="0 0 ' + W + ' ' + H + '" xmlns="http://www.w3.org/2000/svg">' +
+        grid + line + dots +
+        '<line x1="' + ml + '" y1="' + (H - mb) + '" x2="' + (W - mr) + '" y2="' + (H - mb) + '" stroke="#5a7184" stroke-width="1.5"/>' +
+        '<line x1="' + ml + '" y1="' + mt + '" x2="' + ml + '" y2="' + (H - mb) + '" stroke="#5a7184" stroke-width="1.5"/>' +
+        '<text x="' + ((ml + W - mr) / 2) + '" y="' + (H - 8) + '" font-size="12" fill="#dbe6f0" text-anchor="middle">' + esc(m.xname + (m.xunit ? ' / ' + m.xunit : '')) + '</text>' +
+        '<text x="14" y="' + ((mt + H - mb) / 2) + '" font-size="12" fill="#dbe6f0" text-anchor="middle" transform="rotate(-90 14 ' + ((mt + H - mb) / 2) + ')">' + esc(m.yname + (m.yunit ? ' / ' + m.yunit : '')) + '</text>' +
+        '<text x="' + (W - mr) + '" y="' + (mt + 4) + '" font-size="11" fill="#2dd4bf" text-anchor="end">' + esc(m.eq || '') + '</text>' +
+        '</svg>';
+      $('m2-chart').innerHTML = svg;
+    }
+
+    $('m2-add').addEventListener('click', function () { m2AddRow(); });
+    $('m2-rows').addEventListener('click', function (e) {
+      if (e.target.classList.contains('m2-del')) { e.target.closest('tr').remove(); m2RebuildIndex(); m2Compute(); }
+    });
+    $('m2-rows').addEventListener('input', m2Compute);
+    ['m2-xname', 'm2-xunit', 'm2-yname', 'm2-yunit'].forEach(function (id) { $(id).addEventListener('input', m2Compute); });
+    $('m2-sample').addEventListener('click', function () {
+      $('m2-rows').innerHTML = '';
+      var xs = [1.0, 2.0, 3.0, 4.0, 5.0, 6.0], ys = [2.01, 4.03, 5.98, 8.02, 10.05, 11.97];
+      xs.forEach(function (x, i) { m2AddRow(x, ys[i]); });
+      m2Compute();
+    });
+    $('m2-clear').addEventListener('click', function () {
+      $('m2-rows').innerHTML = '';
+      for (var i = 0; i < 6; i++) m2AddRow();
+      m2Compute();
+    });
+    $('m2-paste').addEventListener('click', function () {
+      openPasteModal(function (cells) { cells.forEach(function (c) { m2AddRow(c[0], c[1]); }); m2Compute(); });
+    });
+    for (var i = 0; i < 6; i++) m2AddRow();
+    // ===== 模块 3：电路参数 · 三电压表法 / 功率因数 =====
+    var m3 = {};
+    function m3Row(u, i, p) {
+      var tr = document.createElement('tr');
+      tr.innerHTML =
+        '<td class="num hint"></td>' +
+        '<td><input type="number" step="any" class="m3-u" /></td>' +
+        '<td><input type="number" step="any" class="m3-i" /></td>' +
+        '<td><input type="number" step="any" class="m3-p" /></td>' +
+        '<td><button type="button" class="btn ghost m3-del" title="删除该行">删</button></td>';
+      tr.querySelector('.m3-u').value = u == null ? '' : u;
+      tr.querySelector('.m3-i').value = i == null ? '' : i;
+      tr.querySelector('.m3-p').value = p == null ? '' : p;
+      return tr;
+    }
+    function m3RebuildIndex() {
+      Array.prototype.forEach.call($('m3-rows').rows, function (tr, k) { tr.cells[0].textContent = k + 1; });
+    }
+    function m3AddRow(u, i, p) { $('m3-rows').appendChild(m3Row(u, i, p)); m3RebuildIndex(); m3Compute(); }
+
+    function m3Compute() {
+      var box = $('m3-result');
+      var f = num($('m3-f').value); if (!Number.isFinite(f) || f <= 0) f = 50;
+      var target = num($('m3-target').value);
+      var rows = [];
+      var cosList = [];
+      var omega = 2 * Math.PI * f;
+      Array.prototype.forEach.call(document.querySelectorAll('#m3-rows tr'), function (tr, k) {
+        var U = num(tr.querySelector('.m3-u').value), I = num(tr.querySelector('.m3-i').value), P = num(tr.querySelector('.m3-p').value);
+        if (![U, I, P].every(Number.isFinite)) return;
+        var S = U * I;
+        var cos = S > 0 ? P / S : NaN;
+        var Q = Math.sqrt(Math.max(0, S * S - P * P));
+        var Z = I > 0 ? U / I : NaN;
+        var R = I > 0 ? P / (I * I) : NaN;
+        var X = Number.isFinite(Z) && Number.isFinite(R) ? Math.sqrt(Math.max(0, Z * Z - R * R)) : NaN;
+        var L = Number.isFinite(X) && X > 0 ? X / omega * 1000 : NaN;
+        var C = Number.isFinite(X) && X > 0 ? 1 / (omega * X) * 1e6 : NaN;
+        rows.push({ k: k + 1, U: U, I: I, P: P, S: S, cos: cos, Q: Q, Z: Z, R: R, X: X, L: L, C: C });
+        if (Number.isFinite(cos)) cosList.push(cos);
+      });
+
+      if (!rows.length) { box.innerHTML = '<div class="hint">录入 U / I / P 读数后自动计算。</div>'; m3._table = []; return; }
+
+      var head = ['组号', 'U / V', 'I / A', 'P / W', '视在功率 S / VA', '功率因数 cosφ', '无功 Q / var', '阻抗 |Z| / Ω', '电阻 R / Ω', '电抗 X / Ω', '电感 L / mH（感性）', '电容 C / μF（容性）'];
+      var html = '<table class="data"><thead><tr>' + head.map(function (h) { return '<th class="num">' + esc(h) + '</th>'; }).join('') + '</tr></thead><tbody>';
+      rows.forEach(function (r) {
+        html += '<tr><td class="num">' + r.k + '</td><td class="num">' + fmt(r.U, 3) + '</td><td class="num">' + fmt(r.I, 4) + '</td><td class="num">' + fmt(r.P, 3) +
+          '</td><td class="num">' + fmt(r.S, 3) + '</td><td class="num">' + fmt(r.cos, 4) + '</td><td class="num">' + fmt(r.Q, 3) +
+          '</td><td class="num">' + fmt(r.Z, 3) + '</td><td class="num">' + fmt(r.R, 3) + '</td><td class="num">' + fmt(r.X, 3) +
+          '</td><td class="num">' + fmt(r.L, 3) + '</td><td class="num">' + fmt(r.C, 3) + '</td></tr>';
+      });
+      html += '</tbody></table>';
+
+      var avgCos = cosList.length ? mean(cosList) : NaN;
+      var summary = [{ label: '平均功率因数 cosφ', value: fmt(avgCos, 4) }];
+
+      // 补偿电容估算（以第一组为改善前状态）
+      var capNote = '';
+      var first = rows[0];
+      if (Number.isFinite(target) && target > 0 && target < 1 && first && first.cos > 0) {
+        if (first.cos >= target) {
+          capNote = '当前 cosφ = ' + fmt(first.cos, 4) + ' 已达到目标 ' + fmt(target, 2) + '，无需并联补偿电容。';
+        } else {
+          var tan1 = Math.tan(Math.acos(first.cos));
+          var tan2 = Math.tan(Math.acos(target));
+          var omega = 2 * Math.PI * f;
+          var C = first.P / (omega * first.U * first.U) * (tan1 - tan2);
+          var uF = C * 1e6;
+          capNote = '若将第 1 组功率因数从 ' + fmt(first.cos, 4) + ' 提高到 ' + fmt(target, 2) +
+            '（f=' + fmt(f, 1) + ' Hz），需并联电容约 ' + fmt(uF, 2) + ' μF。';
+          summary.push({ label: '补偿电容 C（估算）', value: fmt(uF, 2) + ' μF' });
+        }
+      }
+
+      box.innerHTML = resTable(summary) + '<div style="margin-top:12px">' + html + '</div>' +
+        '<p class="hint" style="margin-top:12px">' + esc(capNote) + '</p>' +
+        '<div class="row-actions"><button type="button" class="btn secondary" data-copy="m3">复制结果表</button>' +
+        '<button type="button" class="btn secondary" data-csv="m3">导出 CSV</button></div>';
+
+      m3._table = [head].concat(rows.map(function (r) {
+        return [r.k, r.U, r.I, r.P, r.S, r.cos, r.Q, r.Z, r.R, r.X, r.L, r.C];
+      }));
+      m3._summary = summary;
+    }
+
+    $('m3-add').addEventListener('click', function () { m3AddRow(); });
+    $('m3-rows').addEventListener('click', function (e) {
+      if (e.target.classList.contains('m3-del')) { e.target.closest('tr').remove(); m3RebuildIndex(); m3Compute(); }
+    });
+    $('m3-rows').addEventListener('input', m3Compute);
+    ['m3-f', 'm3-target'].forEach(function (id) { $(id).addEventListener('input', m3Compute); });
+    $('m3-sample').addEventListener('click', function () {
+      $('m3-rows').innerHTML = '';
+      m3AddRow(220, 0.41, 40);
+      m3AddRow(220, 0.28, 40);
+      m3Compute();
+    });
+    $('m3-clear').addEventListener('click', function () {
+      $('m3-rows').innerHTML = '';
+      for (var i = 0; i < 3; i++) m3AddRow();
+      m3Compute();
+    });
+    for (var i = 0; i < 3; i++) m3AddRow();
+
+    // ===== 模块 4：数电真值表核对 =====
+    var m4 = {};
+    function m4Split(s) { return String(s || '').trim().split(/\s+/).filter(Boolean); }
+    function m4Norm(v) { var s = String(v == null ? '' : v).trim(); return s === '0' || s === '1' ? s : ''; }
+
+    function m4BuildHead() {
+      var ins = m4Split($('m4-inputs').value), outs = m4Split($('m4-outputs').value);
+      var th = ['<th style="width:46px">序号</th>'];
+      ins.forEach(function (s) { th.push('<th class="num">输入 ' + esc(s) + '</th>'); });
+      outs.forEach(function (s) { th.push('<th class="num">实测 ' + esc(s) + '</th>'); });
+      outs.forEach(function (s) { th.push('<th class="num">预期 ' + esc(s) + '</th>'); });
+      th.push('<th>判定</th>');
+      $('m4-head').innerHTML = th.join('');
+      return { ins: ins, outs: outs };
+    }
+
+    function m4Row(vals) {
+      var c = m4BuildHead();
+      var tr = document.createElement('tr');
+      var html = '<td class="num hint"></td>';
+      c.ins.forEach(function (_, j) { html += '<td><input type="text" class="m4-in" maxlength="1" /></td>'; });
+      c.outs.forEach(function () { html += '<td><input type="text" class="m4-m" maxlength="1" /></td>'; });
+      c.outs.forEach(function () { html += '<td><input type="text" class="m4-e" maxlength="1" /></td>'; });
+      html += '<td class="m4-status hint"></td><td><button type="button" class="btn ghost m4-del">删</button></td>';
+      tr.innerHTML = html;
+      if (vals) {
+        var ins = tr.querySelectorAll('.m4-in'), mm = tr.querySelectorAll('.m4-m'), ee = tr.querySelectorAll('.m4-e');
+        vals.in.forEach(function (v, j) { if (ins[j]) ins[j].value = v; });
+        vals.m.forEach(function (v, j) { if (mm[j]) mm[j].value = v; });
+        vals.e.forEach(function (v, j) { if (ee[j]) ee[j].value = v; });
+      }
+      return tr;
+    }
+    function m4RebuildIndex() {
+      Array.prototype.forEach.call($('m4-rows').rows, function (tr, k) { tr.cells[0].textContent = k + 1; });
+    }
+    function m4AddRow(vals) { $('m4-rows').appendChild(m4Row(vals)); m4RebuildIndex(); m4Compute(); }
+
+    function m4Compute() {
+      var c = m4BuildHead();
+      var box = $('m4-result');
+      var checked = 0, pending = 0, matchRows = 0, mismatchRows = 0, mismatchCells = [];
+      var report = [['行号'].concat(c.ins).concat(c.outs.map(function (o) { return '实测 ' + o; })).concat(c.outs.map(function (o) { return '预期 ' + o; })).concat(['判定'])];
+
+      Array.prototype.forEach.call(document.querySelectorAll('#m4-rows tr'), function (tr, k) {
+        var ins = tr.querySelectorAll('.m4-in'), mm = tr.querySelectorAll('.m4-m'), ee = tr.querySelectorAll('.m4-e');
+        var inVals = Array.prototype.map.call(ins, function (x) { return x.value.trim(); });
+        var mVals = Array.prototype.map.call(mm, function (x) { return m4Norm(x.value); });
+        var eVals = Array.prototype.map.call(ee, function (x) { return m4Norm(x.value); });
+        var status = tr.querySelector('.m4-status');
+        var hasExp = eVals.some(function (v) { return v !== ''; });
+        var rowMismatch = [], missing = false, verdict = '—';
+        if (hasExp) {
+          eVals.forEach(function (ev, j) {
+            if (ev === '') return;
+            if (mVals[j] === '') { missing = true; }
+            else if (mVals[j] !== ev) rowMismatch.push({ o: c.outs[j], m: mVals[j], e: ev });
+          });
+          if (missing) {
+            pending++; status.textContent = '待实测'; status.className = 'm4-status hint'; verdict = '待实测';
+          } else {
+            checked++;
+            if (rowMismatch.length === 0) { matchRows++; status.textContent = '一致'; status.className = 'm4-status ok'; verdict = '一致'; }
+            else {
+              mismatchRows++; status.textContent = '不一致'; status.className = 'm4-status bad'; verdict = '不一致';
+              rowMismatch.forEach(function (mm2) { mismatchCells.push({ row: k + 1, o: mm2.o, m: mm2.m, e: mm2.e }); });
+            }
+          }
+        } else { status.textContent = '未填预期'; status.className = 'm4-status hint'; }
+        report.push([k + 1].concat(inVals).concat(mVals).concat(eVals).concat([verdict]));
+      });
+
+      m4._report = report;
+      if (checked === 0 && pending === 0) { box.innerHTML = '<div class="hint">填入预期输出后自动逐行比对。</div>'; return; }
+
+      var rate = checked > 0 ? (matchRows / checked * 100).toFixed(1) + '%' : '—';
+      var html = '<div class="stat-row">' +
+        '<div class="stat"><div class="n">' + checked + '</div><div class="l">已核对行</div></div>' +
+        '<div class="stat"><div class="n">' + pending + '</div><div class="l">待实测</div></div>' +
+        '<div class="stat"><div class="n ok">' + matchRows + '</div><div class="l">一致</div></div>' +
+        '<div class="stat"><div class="n bad">' + mismatchRows + '</div><div class="l">不一致</div></div>' +
+        '<div class="stat"><div class="n">' + rate + '</div><div class="l">一致率</div></div></div>';
+
+      if (mismatchCells.length) {
+        html += '<table class="data"><thead><tr><th>行号</th><th>输出位</th><th class="num">实测</th><th class="num">预期</th></tr></thead><tbody>';
+        mismatchCells.forEach(function (d) {
+          html += '<tr><td class="num">' + d.row + '</td><td>' + esc(d.o) + '</td><td class="num bad">' + esc(d.m) + '</td><td class="num">' + esc(d.e) + '</td></tr>';
+        });
+        html += '</tbody></table>';
+      } else {
+        html += '<p class="hint ok">全部已核对行输出与预期一致。' + (pending > 0 ? ' 另有 ' + pending + ' 行待填入实测值。' : '') + '</p>';
+      }
+      html += '<div class="row-actions"><button type="button" class="btn secondary" data-copy="m4">复制结果表</button>' +
+        '<button type="button" class="btn secondary" data-csv="m4">导出 CSV</button></div>';
+      box.innerHTML = html;
+    }
+
+    function m4RebuildRows() {
+      var old = Array.prototype.map.call($('m4-rows').rows, function (tr) {
+        return {
+          in: Array.prototype.map.call(tr.querySelectorAll('.m4-in'), function (x) { return x.value; }),
+          m: Array.prototype.map.call(tr.querySelectorAll('.m4-m'), function (x) { return x.value; }),
+          e: Array.prototype.map.call(tr.querySelectorAll('.m4-e'), function (x) { return x.value; })
+        };
+      });
+      $('m4-rows').innerHTML = '';
+      old.forEach(function (v) { m4AddRow(v); });
+      if (!old.length) for (var i = 0; i < 4; i++) m4AddRow();
+    }
+
+    $('m4-add').addEventListener('click', function () { m4AddRow(); });
+    $('m4-rows').addEventListener('click', function (e) {
+      if (e.target.classList.contains('m4-del')) { e.target.closest('tr').remove(); m4RebuildIndex(); m4Compute(); }
+    });
+    $('m4-rows').addEventListener('input', m4Compute);
+    ['m4-inputs', 'm4-outputs'].forEach(function (id) { $(id).addEventListener('input', m4RebuildRows); });
+    $('m4-sample').addEventListener('click', function () {
+      $('m4-inputs').value = 'A B C'; $('m4-outputs').value = 'Y0 Y1 Y2 Y3 Y4 Y5 Y6 Y7';
+      $('m4-rows').innerHTML = '';
+      var combos = ['000', '001', '010', '011', '100', '101', '110', '111'];
+      combos.forEach(function (cb, k) {
+        var e = ['1', '1', '1', '1', '1', '1', '1', '1']; e[k] = '0';
+        m4AddRow({ in: cb.split(''), m: [], e: e });
+      });
+      m4Compute();
+    });
+    $('m4-clear').addEventListener('click', function () {
+      $('m4-rows').innerHTML = '';
+      for (var i = 0; i < 4; i++) m4AddRow();
+      m4Compute();
+    });
+    m4RebuildRows();
+
+    // ===== 模块 5：逐差法 =====
+    var m5 = {};
+    function m5Row(v) {
+      var tr = document.createElement('tr');
+      tr.innerHTML = '<td class="num hint"></td><td><input type="number" step="any" class="m5-x" /></td>' +
+        '<td><button type="button" class="btn ghost m5-del" title="删除该行">删</button></td>';
+      tr.querySelector('.m5-x').value = v == null ? '' : v;
+      return tr;
+    }
+    function m5RebuildIndex() {
+      Array.prototype.forEach.call($('m5-rows').rows, function (tr, i) { tr.cells[0].textContent = i + 1; });
+    }
+    function m5AddRow(v) { $('m5-rows').appendChild(m5Row(v)); m5RebuildIndex(); m5Compute(); }
+    function m5Readings() {
+      return Array.prototype.map.call(document.querySelectorAll('.m5-x'), function (i) { return num(i.value); })
+        .filter(function (n) { return Number.isFinite(n); });
+    }
+    function m5Compute() {
+      var box = $('m5-result');
+      var vals = m5Readings();
+      if (vals.length < 2) { box.innerHTML = '<div class="hint">录入读数后自动计算。</div>'; m5._summary = []; m5._detail = []; return; }
+
+      var half = Math.floor(vals.length / 2);
+      var step = num($('m5-step').value); if (!Number.isFinite(step) || step <= 0) step = 1;
+      var delta = num($('m5-delta').value);
+      var uB = Number.isFinite(delta) && delta > 0 ? delta / 1.732 : 0;
+      var unit = $('m5-unit').value.trim();
+      var name = $('m5-name').value.trim() || 'x';
+
+      var paired = [];
+      for (var i = 0; i < half; i++) {
+        var a = vals[i], b = vals[half + i];
+        if (Number.isFinite(a) && Number.isFinite(b)) paired.push({ i: i + 1, a: a, b: b, d: b - a });
+      }
+      if (!paired.length) { box.innerHTML = '<div class="hint">前后两组都需要有效读数。</div>'; return; }
+
+      var np = paired.length;
+      var dbar = mean(paired.map(function (p) { return p.d; }));
+      var ss = paired.reduce(function (s, p) { return s + (p.d - dbar) * (p.d - dbar); }, 0);
+      var sd = np > 1 ? Math.sqrt(ss / (np - 1)) : 0;
+      var uA = sd / Math.sqrt(np);
+      var uc = Math.sqrt(uA * uA + uB * uB);
+      var k = dbar / (half * step);
+      var uk = uc / (half * step);
+      var relK = k !== 0 ? Math.abs(uk / k) * 100 : NaN;
+
+      var det = '<table class="data"><thead><tr><th>前半序号</th><th class="num">aᵢ</th><th class="num">后半序号</th><th class="num">bᵢ</th><th class="num">逐差 Δᵢ</th><th class="num">Δᵢ−Δ̄</th><th class="num">偏差²</th></tr></thead><tbody>';
+      paired.forEach(function (p) {
+        var dv = p.d - dbar;
+        det += '<tr><td class="num">' + p.i + '</td><td class="num">' + fmt(p.a, 4) + '</td><td class="num">' + (p.i + half) + '</td><td class="num">' + fmt(p.b, 4) +
+          '</td><td class="num">' + fmt(p.d, 4) + '</td><td class="num">' + fmt(dv, 4) + '</td><td class="num">' + fmt(dv * dv, 6) + '</td></tr>';
+      });
+      det += '</tbody></table>';
+
+      var rows = [
+        { label: '配对数 n（每组）', value: String(np) },
+        { label: '平均逐差 Δ̄', value: fmt(dbar, 4) + (unit ? ' ' + unit : '') },
+        { label: '逐差标准差 s_Δ（贝塞尔）', value: fmt(sd, 4) },
+        { label: 'A 类不确定度 u_A = s_Δ/√n', value: fmt(uA, 4) },
+        { label: 'B 类不确定度 u_B = Δ/√3', value: fmt(uB, 4) },
+        { label: '合成标准不确定度 u_c', value: fmt(uc, 4) },
+        { label: '单位间隔变化量 k = Δ̄/(n·Δx)', value: fmt(k, 4) + ' ± ' + fmt(uk, 4) },
+        { label: 'k 的相对不确定度', value: pct(relK) }
+      ];
+      var expr = 'k = ' + fmt(k, 4) + ' ± ' + fmt(uk, 4) + '（每单位' + esc(name) + '变化），Δ̄ = ' + fmt(dbar, 4) +
+        (unit ? ' ' + unit : '') + '，相对不确定度 ' + pct(relK) + '。';
+      if (vals.length % 2 !== 0) expr += ' 注：读数个数为奇数，最后一个未参与逐差。';
+
+      box.innerHTML =
+        '<div class="stat-row">' +
+          '<div class="stat"><div class="n">' + np + '</div><div class="l">配对数</div></div>' +
+          '<div class="stat"><div class="n">' + fmt(dbar, 4) + '</div><div class="l">平均逐差' + (unit ? ' / ' + unit : '') + '</div></div>' +
+          '<div class="stat"><div class="n">' + fmt(k, 4) + '</div><div class="l">变化量 k</div></div>' +
+          '<div class="stat"><div class="n">' + pct(relK) + '</div><div class="l">相对不确定度</div></div></div>' +
+        resTable(rows) + '<div style="margin-top:12px">' + det + '</div>' +
+        '<p class="hint" style="margin-top:12px">' + esc(expr) + '</p>' +
+        '<div class="row-actions"><button type="button" class="btn secondary" data-copy="m5">复制结果表</button>' +
+        '<button type="button" class="btn secondary" data-csv="m5">导出 CSV</button></div>';
+
+      m5._summary = rows;
+      m5._detail = paired.map(function (p) { return [p.i, p.a, p.i + half, p.b, p.d, p.d - dbar, (p.d - dbar) * (p.d - dbar)]; });
+      m5._expr = expr;
+    }
+
+    $('m5-add').addEventListener('click', function () { m5AddRow(); });
+    $('m5-rows').addEventListener('click', function (e) {
+      if (e.target.classList.contains('m5-del')) { e.target.closest('tr').remove(); m5RebuildIndex(); m5Compute(); }
+    });
+    $('m5-rows').addEventListener('input', m5Compute);
+    ['m5-step', 'm5-delta', 'm5-name', 'm5-unit'].forEach(function (id) { $(id).addEventListener('input', m5Compute); });
+    $('m5-sample').addEventListener('click', function () {
+      $('m5-rows').innerHTML = '';
+      [12.00, 14.21, 16.12, 18.30, 20.22, 22.41, 24.33, 26.52].forEach(function (v) { m5AddRow(v); });
+      m5Compute();
+    });
+    $('m5-clear').addEventListener('click', function () {
+      $('m5-rows').innerHTML = '';
+      for (var i = 0; i < 8; i++) m5AddRow();
+      m5Compute();
+    });
+    for (var i = 0; i < 8; i++) m5AddRow();
+
+    // ===== 模块 6：误差传递 · 间接测量 =====
+    var m6 = {};
+    var M6_META = {
+      sum:       { la: 'A 最佳值', lb: 'B 最佳值', formula: 'u_N = √(u_A² + u_B²)，相对不确定度 = u_N / |N|' },
+      product:   { la: 'A 最佳值', lb: 'B 最佳值', formula: 'N = A·B，(u_N/N) = √((u_A/A)² + (u_B/B)²)' },
+      quotient:  { la: 'A 最佳值', lb: 'B 最佳值', formula: 'N = A/B，(u_N/N) = √((u_A/A)² + (u_B/B)²)' },
+      power:     { la: 'A 最佳值', lb: '—',       formula: 'N = Aᵖ，(u_N/N) = |p|·u_A/A' },
+      density:   { la: '质量 m',  lb: '体积 V',   formula: 'ρ = m/V，(u_ρ/ρ) = √((u_m/m)² + (u_V/V)²)' },
+      pendulum:  { la: '摆长 L',  lb: '周期 T',   formula: 'g = 4π²L/T²，(u_g/g) = √((u_L/L)² + (2u_T/T)²)' }
+    };
+    function m6SyncMeta() {
+      var mode = $('m6-model').value;
+      var meta = M6_META[mode];
+      $('m6-la').textContent = meta.la;
+      $('m6-lb').textContent = meta.lb;
+      $('m6-formula').textContent = meta.formula;
+      $('m6-p-field').classList.toggle('hidden', mode !== 'power');
+    }
+    function m6Compute() {
+      var box = $('m6-result');
+      var mode = $('m6-model').value;
+      var A = num($('m6-a').value), uA = num($('m6-ua').value);
+      var B = num($('m6-b').value), uB = num($('m6-ub').value), p = num($('m6-p').value);
+      var N = NaN, rel = NaN, uN = NaN, nLabel = 'N', formulaText = '';
+
+      if (mode === 'sum') {
+        if (![A, uA, B, uB].every(Number.isFinite)) { m6Empty(box); return; }
+        N = A + B; uN = Math.sqrt(uA * uA + uB * uB); rel = N !== 0 ? uN / Math.abs(N) : NaN;
+        nLabel = 'N';
+      } else if (mode === 'product') {
+        if (![A, uA, B, uB].every(Number.isFinite) || A === 0 || B === 0) { m6Empty(box); return; }
+        N = A * B; rel = Math.sqrt((uA / A) * (uA / A) + (uB / B) * (uB / B)); uN = N * rel;
+        nLabel = 'N';
+      } else if (mode === 'quotient') {
+        if (![A, uA, B, uB].every(Number.isFinite) || B === 0) { m6Empty(box); return; }
+        N = A / B; rel = Math.sqrt((uA / A) * (uA / A) + (uB / B) * (uB / B)); uN = N * rel;
+        nLabel = 'N';
+      } else if (mode === 'power') {
+        if (![A, uA, p].every(Number.isFinite) || A === 0) { m6Empty(box); return; }
+        N = Math.pow(A, p); rel = Math.abs(p) * uA / Math.abs(A); uN = N * rel;
+        nLabel = 'N';
+      } else if (mode === 'density') {
+        if (![A, uA, B, uB].every(Number.isFinite) || B === 0) { m6Empty(box); return; }
+        N = A / B; rel = Math.sqrt((uA / A) * (uA / A) + (uB / B) * (uB / B)); uN = N * rel;
+        nLabel = 'ρ';
+      } else if (mode === 'pendulum') {
+        if (![A, uA, B, uB].every(Number.isFinite) || B === 0) { m6Empty(box); return; }
+        N = 4 * Math.PI * Math.PI * A / (B * B); rel = Math.sqrt((uA / A) * (uA / A) + (2 * uB / B) * (2 * uB / B)); uN = N * rel;
+        nLabel = 'g';
+      }
+
+      var dec = uDecimals(uN);
+      var rows = [
+        { label: '最佳值 ' + nLabel, value: fmt(N, 4) },
+        { label: '合成标准不确定度 u_' + nLabel, value: fmt(uN, 4) },
+        { label: '相对不确定度', value: pct(rel * 100) }
+      ];
+      var expr = nLabel + ' = (' + roundTo(N, dec) + ' ± ' + roundTo(uN, dec) + ')，相对不确定度 ' + pct(rel * 100) + '。';
+      box.innerHTML =
+        '<div class="stat-row">' +
+          '<div class="stat"><div class="n">' + fmt(N, 4) + '</div><div class="l">最佳值 ' + nLabel + '</div></div>' +
+          '<div class="stat"><div class="n">' + fmt(uN, 4) + '</div><div class="l">合成不确定度</div></div>' +
+          '<div class="stat"><div class="n">' + pct(rel * 100) + '</div><div class="l">相对不确定度</div></div></div>' +
+        resTable(rows) +
+        '<p class="hint" style="margin-top:12px">' + esc(expr) + '</p>' +
+        '<div class="row-actions"><button type="button" class="btn secondary" data-copy="m6">复制结果表</button>' +
+        '<button type="button" class="btn secondary" data-csv="m6">导出 CSV</button></div>';
+      m6._summary = rows; m6._expr = expr;
+    }
+    function m6Empty(box) { box.innerHTML = '<div class="hint">填入有效数值后自动合成。</div>'; m6._summary = []; }
+
+    var M6_DEFAULTS = {
+      sum:       { a: 10.0,  ua: 0.02,  b: 5.0,  ub: 0.02,  p: 2 },
+      product:   { a: 2.50,  ua: 0.01,  b: 3.00, ub: 0.01,  p: 2 },
+      quotient:  { a: 120.0, ua: 0.05,  b: 40.0, ub: 0.10,  p: 2 },
+      power:     { a: 2.00,  ua: 0.01,  b: 1.0,  ub: 0.0,   p: 2 },
+      density:   { a: 120.0, ua: 0.05,  b: 40.0, ub: 0.10,  p: 2 },
+      pendulum:  { a: 0.900, ua: 0.001, b: 1.900, ub: 0.005, p: 2 }
+    };
+    function applyM6Defaults() {
+      var d = M6_DEFAULTS[$('m6-model').value];
+      if (!d) return;
+      $('m6-a').value = d.a; $('m6-ua').value = d.ua;
+      $('m6-b').value = d.b; $('m6-ub').value = d.ub; $('m6-p').value = d.p;
+    }
+    ['m6-model', 'm6-a', 'm6-ua', 'm6-b', 'm6-ub', 'm6-p'].forEach(function (id) {
+      $(id).addEventListener('input', function () { m6SyncMeta(); m6Compute(); });
+    });
+    $('m6-model').addEventListener('change', function () { applyM6Defaults(); m6Compute(); });
+    m6SyncMeta(); m6Compute();
+
+    // ===== 模块 7：RC 时间常数 =====
+    var m7 = {};
+    function m7SyncMeta() {
+      var mode = $('m7-mode').value;
+      if (mode === 'charge') { $('m7-t0-label').textContent = '起始时刻 t₀'; $('m7-t1-label').textContent = '到 63.2% 时刻 t₁'; }
+      else if (mode === 'discharge') { $('m7-t0-label').textContent = '起始时刻 t₀'; $('m7-t1-label').textContent = '到 36.8% 时刻 t₁'; }
+      else { $('m7-t0-label').textContent = '10% 时刻 t₁₀'; $('m7-t1-label').textContent = '90% 时刻 t₉₀'; }
+    }
+    function m7Compute() {
+      var box = $('m7-result');
+      var R = num($('m7-r').value), C = num($('m7-c').value);
+      var mode = $('m7-mode').value;
+      var t0 = num($('m7-t0').value), t1 = num($('m7-t1').value);
+      var tauTh = Number.isFinite(R) && Number.isFinite(C) && R > 0 && C > 0 ? R * C * 1e-6 : NaN;
+      var tauObs = NaN;
+      if ([t0, t1].every(Number.isFinite)) {
+        var dt = Math.abs(t1 - t0) / 1000;
+        tauObs = mode === 'rise' ? dt / 2.2 : dt;
+      }
+      var relErr = Number.isFinite(tauTh) && Number.isFinite(tauObs) && tauTh > 0 ? Math.abs(tauObs - tauTh) / tauTh * 100 : NaN;
+      var tr = Number.isFinite(tauTh) ? 2.2 * tauTh : NaN;
+      var t5 = Number.isFinite(tauTh) ? 5 * tauTh : NaN;
+
+      var rows = [
+        { label: '理论时间常数 τ = RC', value: fmt(tauTh * 1000, 3) + ' ms' },
+        { label: '波形反推实测 τ', value: Number.isFinite(tauObs) ? fmt(tauObs * 1000, 3) + ' ms' : '—' },
+        { label: '实测 vs 理论相对误差', value: pct(relErr) },
+        { label: '10%→90% 上升时间 t_r ≈ 2.2τ', value: Number.isFinite(tr) ? fmt(tr * 1000, 3) + ' ms' : '—' },
+        { label: '约 5τ 充放电完成（99.3%）', value: Number.isFinite(t5) ? fmt(t5 * 1000, 3) + ' ms' : '—' }
+      ];
+      var expr = Number.isFinite(tauTh) ? 'τ = RC = ' + fmt(R, 4) + ' × ' + fmt(C, 4) + ' μF = ' + fmt(tauTh * 1000, 3) + ' ms。' : '请填入有效的 R 与 C。';
+      if (Number.isFinite(tauObs)) expr += ' 波形实测 τ = ' + fmt(tauObs * 1000, 3) + ' ms，相对误差 ' + pct(relErr) + '。';
+
+      box.innerHTML =
+        '<div class="stat-row">' +
+          '<div class="stat"><div class="n">' + (Number.isFinite(tauTh) ? fmt(tauTh * 1000, 3) : '—') + '</div><div class="l">理论 τ / ms</div></div>' +
+          '<div class="stat"><div class="n">' + (Number.isFinite(tauObs) ? fmt(tauObs * 1000, 3) : '—') + '</div><div class="l">实测 τ / ms</div></div>' +
+          '<div class="stat"><div class="n">' + pct(relErr) + '</div><div class="l">相对误差</div></div></div>' +
+        resTable(rows) + '<p class="hint" style="margin-top:12px">' + esc(expr) + '</p>';
+      m7._summary = rows; m7._expr = expr;
+    }
+    ['m7-mode', 'm7-r', 'm7-c', 'm7-t0', 'm7-t1'].forEach(function (id) { $(id).addEventListener('input', function () { m7SyncMeta(); m7Compute(); }); });
+    m7SyncMeta(); m7Compute();
+
+    // ===== 模块 8：光学干涉计算 =====
+    var m8 = {};
+    function m8SyncMeta() {
+      var mode = $('m8-mode').value;
+      $('m8-wedge-fields').classList.toggle('hidden', mode !== 'wedge');
+      $('m8-film-fields').classList.toggle('hidden', mode !== 'film');
+      $('m8-newton-fields').classList.toggle('hidden', mode !== 'newton');
+    }
+    function m8Compute() {
+      var box = $('m8-result');
+      var mode = $('m8-mode').value;
+      var lam = num($('m8-lambda').value);
+      var rows = []; var expr = '';
+
+      if (mode === 'wedge') {
+        var L = num($('m8-l').value), strip = num($('m8-strip').value);
+        if (![lam, L, strip].every(Number.isFinite) || strip === 0) { m8Empty(box); return; }
+        var D_um = lam * L / (2 * strip) / 1000;
+        rows = [
+          { label: '波长 λ', value: fmt(lam, 3) + ' nm' },
+          { label: '劈尖长度 L', value: fmt(L, 4) + ' mm' },
+          { label: '相邻条纹间距 l', value: fmt(strip, 4) + ' mm' },
+          { label: '细丝（薄片）直径 D = λL/(2l)', value: fmt(D_um, 3) + ' μm' }
+        ];
+        expr = 'D = λL/(2l) = ' + fmt(D_um, 3) + ' μm。';
+      } else if (mode === 'film') {
+        var n2 = num($('m8-n2').value);
+        if (![lam, n2].every(Number.isFinite) || n2 === 0) { m8Empty(box); return; }
+        var emin = lam / (4 * n2);
+        rows = [
+          { label: '波长 λ', value: fmt(lam, 3) + ' nm' },
+          { label: '膜折射率 n₂', value: fmt(n2, 3) },
+          { label: '最小厚度 e_min = λ/(4n₂)', value: fmt(emin, 3) + ' nm' },
+          { label: '通解 e = (2k+1)λ/(4n₂)', value: 'k = 0, 1, 2, …' }
+        ];
+        expr = 'e_min = λ/(4n₂) = ' + fmt(emin, 3) + ' nm；膜厚取此值的奇数倍时反射相消（增透）。';
+      } else {
+        var dk = num($('m8-dk').value), dkm = num($('m8-dkm').value), mm = num($('m8-m').value), nmed = num($('m8-n').value);
+        if (![dk, dkm, mm, nmed, lam].every(Number.isFinite) || mm === 0) { m8Empty(box); return; }
+        var R_mm = (dkm * dkm - dk * dk) * nmed / (4 * mm * lam * 1e-6);
+        var R_cm = R_mm / 10;
+        rows = [
+          { label: '第 k 环直径 d_k', value: fmt(dk, 4) + ' mm' },
+          { label: '第 k+m 环直径 d_{k+m}', value: fmt(dkm, 4) + ' mm' },
+          { label: '环序数差 m', value: String(mm) },
+          { label: '介质折射率 n', value: fmt(nmed, 3) },
+          { label: '曲率半径 R = (d²_{k+m}−d_k²)·n/(4mλ)', value: fmt(R_cm, 3) + ' cm' }
+        ];
+        expr = 'R = (d²_{k+m} − d_k²)·n/(4mλ) = ' + fmt(R_cm, 3) + ' cm。';
+      }
+
+      box.innerHTML = resTable(rows) + '<p class="hint" style="margin-top:12px">' + esc(expr) + '</p>';
+      m8._summary = rows; m8._expr = expr;
+    }
+    function m8Empty(box) { box.innerHTML = '<div class="hint">填入有效数值后自动计算。</div>'; m8._summary = []; }
+
+    ['m8-mode', 'm8-lambda', 'm8-l', 'm8-strip', 'm8-n2', 'm8-dk', 'm8-dkm', 'm8-m', 'm8-n'].forEach(function (id) {
+      $(id).addEventListener('input', function () { m8SyncMeta(); m8Compute(); });
+    });
+    m8SyncMeta(); m8Compute();
+
+    // ===== 通用表达式解析器（递归下降，不使用 eval） =====
+    var FUNCS = {
+      sin: Math.sin, cos: Math.cos, tan: Math.tan,
+      asin: Math.asin, acos: Math.acos, atan: Math.atan,
+      ln: Math.log, log10: Math.log10, log: Math.log10, exp: Math.exp,
+      sqrt: Math.sqrt, abs: Math.abs
+    };
+    function tokenizeExpr(src) {
+      var s = String(src == null ? '' : src)
+        .replace(/[×÷·]/g, function (c) { return c === '×' ? '*' : c === '÷' ? '/' : '*'; })
+        .replace(/,/g, '').replace(/\s/g, '');
+      if (!s) throw new Error('表达式为空');
+      var re = /(\d+\.?\d*|\.\d+|[a-zA-Zπ]+|[+\-*/^()!])/g;
+      var toks = [], m;
+      while ((m = re.exec(s))) toks.push(m[0]);
+      var recon = toks.join('').replace(/[+\-*/^()!]/g, '');
+      var orig = s.replace(/[+\-*/^()!]/g, '');
+      if (recon !== orig) throw new Error('含无法识别的字符');
+      return toks;
+    }
+    function ExprEval(toks, angleMode, xVal) {
+      this.t = toks; this.pos = 0; this.angle = angleMode === 'deg'; this.x = xVal;
+    }
+    ExprEval.prototype.peek = function () { return this.t[this.pos]; };
+    ExprEval.prototype.next = function () { return this.t[this.pos++]; };
+    ExprEval.prototype.isStart = function (tk) {
+      if (!tk) return false;
+      if (/^\d/.test(tk) || tk === '(') return true;
+      return /^[a-zA-Zπ]/.test(tk);
+    };
+    ExprEval.prototype.parseExpr = function () {
+      var v = this.parseTerm();
+      while (this.peek() === '+' || this.peek() === '-') {
+        var op = this.next(), r = this.parseTerm();
+        v = op === '+' ? v + r : v - r;
+      }
+      return v;
+    };
+    ExprEval.prototype.parseTerm = function () {
+      var v = this.parseFactor();
+      while (this.peek() === '*' || this.peek() === '/' || this.isStart(this.peek())) {
+        var tk = this.peek();
+        if (tk === '*') { this.next(); v = v * this.parseFactor(); }
+        else if (tk === '/') { this.next(); var r = this.parseFactor(); if (r === 0) throw new Error('除数为 0'); v = v / r; }
+        else { v = v * this.parseFactor(); }
+      }
+      return v;
+    };
+    ExprEval.prototype.parseFactor = function () {
+      var v = this.parseUnary();
+      if (this.peek() === '^') { this.next(); var e = this.parseFactor(); v = Math.pow(v, e); }
+      return v;
+    };
+    ExprEval.prototype.parseUnary = function () {
+      if (this.peek() === '-') { this.next(); return -this.parseUnary(); }
+      if (this.peek() === '+') { this.next(); return this.parseUnary(); }
+      return this.parsePostfix();
+    };
+    ExprEval.prototype.parsePostfix = function () {
+      var v = this.parsePrimary();
+      while (this.peek() === '!') {
+        this.next();
+        if (v < 0 || Math.abs(v - Math.round(v)) > 1e-9) throw new Error('阶乘只接受非负整数');
+        v = this.fact(Math.round(v));
+      }
+      return v;
+    };
+    ExprEval.prototype.fact = function (n) {
+      if (n > 170) throw new Error('阶乘数值过大');
+      var r = 1; for (var i = 2; i <= n; i++) r *= i; return r;
+    };
+    ExprEval.prototype.parsePrimary = function () {
+      var tk = this.peek();
+      if (!tk) throw new Error('表达式不完整');
+      if (tk === '(') { this.next(); var v = this.parseExpr(); if (this.next() !== ')') throw new Error('缺少右括号'); return v; }
+      if (/^\d/.test(tk)) { this.next(); return Number(tk); }
+      if (/^[a-zA-Zπ]/.test(tk)) {
+        this.next();
+        var low = tk.toLowerCase();
+        if (FUNCS[low]) {
+          if (this.next() !== '(') throw new Error('函数后应接括号');
+          var arg = this.parseExpr();
+          if (this.next() !== ')') throw new Error('缺少右括号');
+          return this.applyFunc(low, arg);
+        }
+        if (low === 'pi' || tk === 'π') return Math.PI;
+        if (low === 'e') return Math.E;
+        if (low === 'x') {
+          if (this.x == null || !Number.isFinite(this.x)) throw new Error('缺少自变量 x 的取值');
+          return this.x;
+        }
+        throw new Error('未知符号 ' + tk);
+      }
+      throw new Error('表达式有误：' + tk);
+    };
+    ExprEval.prototype.applyFunc = function (name, arg) {
+      if (name === 'sqrt' && arg < 0) throw new Error('负数不能开平方');
+      if (this.angle) {
+        if (name === 'sin') return Math.sin(arg * Math.PI / 180);
+        if (name === 'cos') return Math.cos(arg * Math.PI / 180);
+        if (name === 'tan') return Math.tan(arg * Math.PI / 180);
+        if (name === 'asin') return Math.asin(arg) * 180 / Math.PI;
+        if (name === 'acos') return Math.acos(arg) * 180 / Math.PI;
+        if (name === 'atan') return Math.atan(arg) * 180 / Math.PI;
+      }
+      return FUNCS[name](arg);
+    };
+    function evalExpr(src, angleMode, xVal) {
+      var toks = tokenizeExpr(src);
+      var p = new ExprEval(toks, angleMode, xVal);
+      var v = p.parseExpr();
+      if (p.pos < toks.length) throw new Error('表达式末尾有多余内容');
+      if (!Number.isFinite(v)) throw new Error('结果不是有限数值');
+      return v;
+    }
+    function fmtSmart(v) {
+      if (v == null || !Number.isFinite(v)) return '—';
+      var a = Math.abs(v);
+      if (v !== 0 && (a >= 1e12 || a < 1e-6)) return v.toExponential(6);
+      return String(Number(v.toPrecision(10)));
+    }
+
+    // ===== 模块 9：基础计算器 =====
+    var m9 = { hist: [] };
+    function m9Compute() {
+      var box = $('m9-result');
+      var src = $('m9-expr').value;
+      if (!src.trim()) { box.innerHTML = '<div class="hint">输入表达式后自动计算。</div>'; m9._summary = []; return; }
+      var angle = $('m9-angle').value;
+      var v;
+      try { v = evalExpr(src, angle, null); }
+      catch (err) { box.innerHTML = '<div class="hint bad">计算错误：' + esc(err.message) + '</div>'; m9._summary = []; return; }
+      var vs = fmtSmart(v);
+      m9._summary = [['表达式', src], ['结果', vs]];
+      box.innerHTML = '<div class="calc-expr">' + esc(src) + '</div>' +
+        '<div class="calc-display" style="margin-top:8px">' + esc(vs) + '</div>' +
+        '<div class="row-actions"><button type="button" class="btn secondary" data-copy="m9">复制结果</button></div>';
+      if (!m9.hist.length || m9.hist[0].expr !== src) m9.hist.unshift({ expr: src, val: vs });
+      if (m9.hist.length > 20) m9.hist.pop();
+      m9RenderHist();
+    }
+    function m9RenderHist() {
+      var box = $('m9-hist');
+      if (!m9.hist.length) { box.innerHTML = '<div class="hint">暂无记录。</div>'; return; }
+      box.innerHTML = m9.hist.map(function (h, i) {
+        return '<div class="hist-item" data-i="' + i + '"><span class="he">' + esc(h.expr) + '</span><span class="hr">' + esc(h.val) + '</span></div>';
+      }).join('');
+    }
+    $('m9-hist').addEventListener('click', function (e) {
+      var it = e.target.closest('.hist-item'); if (!it) return;
+      var h = m9.hist[Number(it.dataset.i)]; if (!h) return;
+      $('m9-expr').value = h.expr; m9Compute();
+    });
+    $('m9-expr').addEventListener('input', m9Compute);
+    $('m9-angle').addEventListener('input', m9Compute);
+    $('m9-calc').addEventListener('click', m9Compute);
+    $('m9-sample').addEventListener('click', function () {
+      $('m9-expr').value = '2*sin(30) + sqrt(2)/2'; $('m9-angle').value = 'deg'; m9Compute();
+    });
+    $('m9-clear').addEventListener('click', function () {
+      $('m9-expr').value = ''; $('m9-result').innerHTML = '<div class="hint">输入表达式后自动计算。</div>'; m9._summary = [];
+    });
+
+    // ===== 模块 10：函数作图 · 采样表 =====
+    var m10 = {};
+    function m10Run() {
+      var box = $('m10-result'), chart = $('m10-chart');
+      var f = $('m10-f').value.trim();
+      var xmin = num($('m10-xmin').value), xmax = num($('m10-xmax').value), n = num($('m10-n').value);
+      var angle = $('m10-angle').value;
+      if (!f) { box.innerHTML = '<div class="hint">请输入函数表达式。</div>'; chart.innerHTML = ''; return; }
+      if (![xmin, xmax].every(Number.isFinite) || !(n >= 2) || xmax <= xmin) {
+        box.innerHTML = '<div class="hint bad">请检查区间与采样点数（x_min &lt; x_max，点数 ≥ 2）。</div>'; chart.innerHTML = ''; return;
+      }
+      n = Math.round(n);
+      var pts = [], preError = null;
+      try {
+        for (var i = 0; i < n; i++) {
+          var x = xmin + (xmax - xmin) * i / (n - 1);
+          var y;
+          try { y = evalExpr(f, angle, x); } catch (e) { y = NaN; }
+          pts.push({ x: x, y: y });
+        }
+      } catch (err) { preError = err; }
+      if (preError) { box.innerHTML = '<div class="hint bad">函数表达式错误：' + esc(preError.message) + '</div>'; chart.innerHTML = ''; return; }
+      var valid = pts.filter(function (p) { return Number.isFinite(p.y); });
+      if (!valid.length) { box.innerHTML = '<div class="hint">区间内没有可计算的有效点。</div>'; chart.innerHTML = ''; return; }
+
+      var ys = valid.map(function (p) { return p.y; });
+      var ymin = Math.min.apply(null, ys), ymax = Math.max.apply(null, ys);
+      var stats = [
+        { label: '采样点数 N', value: String(n) },
+        { label: '有效点数', value: String(valid.length) },
+        { label: 'y 最小值', value: fmtSmart(ymin) },
+        { label: 'y 最大值', value: fmtSmart(ymax) },
+        { label: '首点 (x₀, y₀)', value: fmtSmart(valid[0].x) + ', ' + fmtSmart(valid[0].y) },
+        { label: '末点 (x_{N-1}, y)', value: fmtSmart(valid[valid.length - 1].x) + ', ' + fmtSmart(valid[valid.length - 1].y) }
+      ];
+      m10._rows = [['序号', 'x', 'y=f(x)']].concat(pts.map(function (p, i) {
+        return [i + 1, roundTo(p.x, 6), Number.isFinite(p.y) ? roundTo(p.y, 6) : '—'];
+      }));
+      m10._meta = { f: f };
+      m10Draw(pts, xmin, xmax, ymin, ymax);
+
+      var det = '<table class="data"><thead><tr><th>序号</th><th class="num">x</th><th class="num">y = f(x)</th></tr></thead><tbody>' +
+        pts.map(function (p, i) {
+          return '<tr><td class="num">' + (i + 1) + '</td><td class="num">' + fmt(p.x, 6) + '</td><td class="num">' + (Number.isFinite(p.y) ? fmt(p.y, 6) : '—') + '</td></tr>';
+        }).join('') + '</tbody></table>';
+      box.innerHTML = resTable(stats) + '<div style="margin-top:10px">' + det + '</div>' +
+        '<div class="row-actions"><button type="button" class="btn secondary" data-copy="m10">复制结果表</button>' +
+        '<button type="button" class="btn secondary" data-csv="m10">导出 CSV</button>' +
+        '<button type="button" class="btn ghost" data-svg="m10">保存 SVG 图</button>' +
+        '<button type="button" class="btn ghost" data-png="m10">保存 PNG</button></div>';
+    }
+    function m10Draw(pts, xmin, xmax, ymin, ymax) {
+      var W = 640, H = 420, ml = 58, mr = 18, mt = 18, mb = 44;
+      var ypad = (ymax - ymin) * 0.12 || 1; ymin -= ypad; ymax += ypad;
+      function sx(x) { return ml + (x - xmin) / (xmax - xmin) * (W - ml - mr); }
+      function sy(y) { return H - mb - (y - ymin) / (ymax - ymin) * (H - mt - mb); }
+      var grid = '';
+      for (var i = 0; i <= 4; i++) {
+        var gx = xmin + (xmax - xmin) * i / 4;
+        var gy = ymin + (ymax - ymin) * i / 4;
+        grid += '<line x1="' + sx(gx) + '" y1="' + mt + '" x2="' + sx(gx) + '" y2="' + (H - mb) + '" stroke="#1c2836" stroke-width="1"/>';
+        grid += '<text x="' + sx(gx) + '" y="' + (H - mb + 18) + '" font-size="11" fill="#8298ac" text-anchor="middle">' + fmt(gx, 2) + '</text>';
+        grid += '<line x1="' + ml + '" y1="' + sy(gy) + '" x2="' + (W - mr) + '" y2="' + sy(gy) + '" stroke="#1c2836" stroke-width="1"/>';
+        grid += '<text x="' + (ml - 8) + '" y="' + (sy(gy) + 4) + '" font-size="11" fill="#8298ac" text-anchor="end">' + fmt(gy, 2) + '</text>';
+      }
+      var segs = [], cur = [];
+      pts.forEach(function (p) {
+        if (Number.isFinite(p.y)) cur.push(p);
+        else { if (cur.length > 1) segs.push(cur); cur = []; }
+      });
+      if (cur.length > 1) segs.push(cur);
+      var paths = segs.map(function (seg) {
+        return '<polyline points="' + seg.map(function (p) { return sx(p.x) + ',' + sy(p.y); }).join(' ') +
+          '" fill="none" stroke="#2dd4bf" stroke-width="2"/>';
+      }).join('');
+      var dots = pts.filter(function (p) { return Number.isFinite(p.y); }).map(function (p) {
+        return '<circle cx="' + sx(p.x) + '" cy="' + sy(p.y) + '" r="3" fill="#f5b13d"/>';
+      }).join('');
+      var m = m10._meta || {};
+      var svg = '<svg class="chart" viewBox="0 0 ' + W + ' ' + H + '" xmlns="http://www.w3.org/2000/svg">' +
+        grid + paths + dots +
+        '<line x1="' + ml + '" y1="' + (H - mb) + '" x2="' + (W - mr) + '" y2="' + (H - mb) + '" stroke="#5a7184" stroke-width="1.5"/>' +
+        '<line x1="' + ml + '" y1="' + mt + '" x2="' + ml + '" y2="' + (H - mb) + '" stroke="#5a7184" stroke-width="1.5"/>' +
+        '<text x="' + ((ml + W - mr) / 2) + '" y="' + (H - 8) + '" font-size="12" fill="#dbe6f0" text-anchor="middle">x</text>' +
+        '<text x="14" y="' + ((mt + H - mb) / 2) + '" font-size="12" fill="#dbe6f0" text-anchor="middle" transform="rotate(-90 14 ' + ((mt + H - mb) / 2) + ')">y</text>' +
+        '<text x="' + (W - mr) + '" y="' + (mt + 4) + '" font-size="11" fill="#2dd4bf" text-anchor="end">' + esc('y = ' + (m.f || '')) + '</text>' +
+        '</svg>';
+      $('m10-chart').innerHTML = svg;
+    }
+    $('m10-run').addEventListener('click', m10Run);
+    ['m10-f', 'm10-xmin', 'm10-xmax', 'm10-n', 'm10-angle'].forEach(function (id) {
+      $(id).addEventListener('input', m10Run);
+    });
+    $('m10-sample').addEventListener('click', function () {
+      $('m10-f').value = '0.5*x^2 - 2'; $('m10-xmin').value = '-3'; $('m10-xmax').value = '3';
+      $('m10-n').value = '13'; $('m10-angle').value = 'rad'; m10Run();
+    });
+    $('m10-clear').addEventListener('click', function () {
+      $('m10-f').value = ''; $('m10-result').innerHTML = '<div class="hint">点击"生成曲线与表格"后输出。</div>';
+      $('m10-chart').innerHTML = '<div class="hint">生成后在此显示曲线。</div>'; m10._rows = [];
+    });
+
+    // ===== 模块 11：单位换算 =====
+    var M11 = {
+      length: { units: { mm: '毫米 mm', cm: '厘米 cm', m: '米 m', km: '千米 km', in: '英寸 in', ft: '英尺 ft', yd: '码 yd', mile: '英里 mile' },
+        f: { mm: 0.001, cm: 0.01, m: 1, km: 1000, in: 0.0254, ft: 0.3048, yd: 0.9144, mile: 1609.344 } },
+      mass: { units: { mg: '毫克 mg', g: '克 g', kg: '千克 kg', t: '吨 t', lb: '磅 lb', oz: '盎司 oz' },
+        f: { mg: 1e-6, g: 0.001, kg: 1, t: 1000, lb: 0.45359237, oz: 0.028349523125 } },
+      time: { units: { ms: '毫秒 ms', s: '秒 s', min: '分钟 min', h: '小时 h', day: '天 day', week: '周 week' },
+        f: { ms: 0.001, s: 1, min: 60, h: 3600, day: 86400, week: 604800 } },
+      temp: { temp: true, units: { C: '摄氏度 °C', F: '华氏度 °F', K: '开尔文 K' } },
+      pressure: { units: { Pa: '帕 Pa', kPa: '千帕 kPa', MPa: '兆帕 MPa', bar: '巴 bar', atm: '标准大气压 atm', mmHg: '毫米汞柱 mmHg', psi: '磅/英寸² psi' },
+        f: { Pa: 1, kPa: 1000, MPa: 1e6, bar: 1e5, atm: 101325, mmHg: 133.3223684, psi: 6894.757293168 } },
+      area: { units: { 'mm2': '平方毫米 mm²', 'cm2': '平方厘米 cm²', 'm2': '平方米 m²', ha: '公顷 ha', km2: '平方千米 km²', ft2: '平方英尺 ft²', acre: '英亩 acre' },
+        f: { mm2: 1e-6, cm2: 1e-4, m2: 1, ha: 1e4, km2: 1e6, ft2: 0.09290304, acre: 4046.8564224 } },
+      volume: { units: { mL: '毫升 mL', L: '升 L', m3: '立方米 m³', gal: '加仑(美) gal', ft3: '立方英尺 ft³' },
+        f: { mL: 1e-3, L: 1, m3: 1000, gal: 3.785411784, ft3: 28.316846592 } },
+      speed: { units: { 'm/s': '米/秒 m/s', 'km/h': '千米/时 km/h', 'ft/s': '英尺/秒 ft/s', mph: '英里/时 mph', knot: '节 knot' },
+        f: { 'm/s': 1, 'km/h': 0.2777777778, 'ft/s': 0.3048, mph: 0.44704, knot: 0.5144444444 } },
+      data: { units: { bit: '位 bit', B: '字节 B', KB: '千字节 KB', MB: '兆字节 MB', GB: '吉字节 GB', TB: '太字节 TB' },
+        f: { bit: 0.125, B: 1, KB: 1024, MB: 1048576, GB: 1073741824, TB: 1099511627776 } }
+    };
+    var m11 = {};
+    function m11BuildUnits() {
+      var cat = M11[$('m11-cat').value];
+      var opts = Object.keys(cat.units).map(function (k) { return '<option value="' + k + '">' + esc(cat.units[k]) + '</option>'; }).join('');
+      var prevFrom = $('m11-from').value, prevTo = $('m11-to').value;
+      $('m11-from').innerHTML = opts; $('m11-to').innerHTML = opts;
+      if (cat.units[prevFrom]) $('m11-from').value = prevFrom;
+      if (cat.units[prevTo]) $('m11-to').value = prevTo;
+      if ($('m11-to').value === $('m11-from').value) $('m11-to').selectedIndex = Math.min(1, Object.keys(cat.units).length - 1);
+    }
+    function m11Compute() {
+      var box = $('m11-result');
+      var cat = M11[$('m11-cat').value];
+      var from = $('m11-from').value, to = $('m11-to').value, v = num($('m11-value').value);
+      if (!Number.isFinite(v)) { box.innerHTML = '<div class="hint">录入数值后自动换算。</div>'; m11._summary = []; return; }
+      var res, formula;
+      if (cat.temp) {
+        var c = from === 'C' ? v : from === 'F' ? (v - 32) * 5 / 9 : v - 273.15;
+        res = to === 'C' ? c : to === 'F' ? c * 9 / 5 + 32 : c + 273.15;
+        formula = '温度为非线性换算：先折算到 °C，再换算到目标单位（°F = °C×9/5+32，K = °C+273.15）。';
+      } else {
+        var kf = cat.f[from], kt = cat.f[to];
+        res = v * kf / kt;
+        formula = '目标值 = 输入值 × k(' + from + ') / k(' + to + ') = ' + fmtSmart(v) + ' × ' + fmtSmart(kf) + ' / ' + fmtSmart(kt);
+      }
+      var rows = [
+        { label: '输入', value: fmtSmart(v) + ' ' + cat.units[from] },
+        { label: '换算结果', value: fmtSmart(res) + ' ' + cat.units[to] }
+      ];
+      m11._summary = rows;
+      box.innerHTML = '<div class="calc-display">' + esc(fmtSmart(res)) + '</div>' +
+        '<div class="calc-expr" style="margin-top:6px">' + esc(cat.units[from]) + ' → ' + esc(cat.units[to]) + '</div>' +
+        resTable(rows) +
+        '<p class="hint" style="margin-top:10px">' + esc(formula) + '</p>' +
+        '<div class="row-actions"><button type="button" class="btn secondary" data-copy="m11">复制结果表</button></div>';
+    }
+    $('m11-cat').addEventListener('input', function () { m11BuildUnits(); m11Compute(); });
+    ['m11-from', 'm11-to', 'm11-value'].forEach(function (id) { $(id).addEventListener('input', m11Compute); });
+    $('m11-swap').addEventListener('click', function () {
+      var f = $('m11-from').value; $('m11-from').value = $('m11-to').value; $('m11-to').value = f; m11Compute();
+    });
+    m11BuildUnits(); m11Compute();
+
+    // ===== 共享：批量粘贴弹窗 =====
+    function parseClip(text) {
+      return String(text == null ? '' : text)
+        .split(/\r?\n/)
+        .map(function (line) { return line.split(/[\t,，;；\s]+/).filter(Boolean); })
+        .filter(function (cells) { return cells.length; });
+    }
+    function openPasteModal(onDone) {
+      var ov = document.createElement('div');
+      ov.className = 'paste-overlay';
+      ov.innerHTML = '<div class="paste-box">' +
+        '<div class="card-hd" style="padding:0 0 10px">粘贴批量数据</div>' +
+        '<textarea placeholder="可从 Excel 复制，支持换行、Tab、逗号、空格分隔；配对数据每行两列。"></textarea>' +
+        '<div class="row-actions" style="margin-top:10px"><button type="button" class="btn" data-ok>确定</button><button type="button" class="btn secondary" data-cancel>取消</button></div>' +
+        '</div>';
+      document.body.appendChild(ov);
+      var ta = ov.querySelector('textarea');
+      ov.querySelector('[data-cancel]').onclick = function () { ov.remove(); };
+      ov.querySelector('[data-ok]').onclick = function () { onDone(parseClip(ta.value)); ov.remove(); };
+      ta.focus();
+    }
+
+    // ===== 共享：t 分布包含因子表（双侧，α=0.05 / 0.01） =====
+    var T95 = [12.706, 4.303, 3.182, 2.776, 2.571, 2.447, 2.365, 2.306, 2.262, 2.228,
+      2.201, 2.179, 2.160, 2.145, 2.131, 2.120, 2.110, 2.101, 2.093, 2.086,
+      2.080, 2.074, 2.069, 2.064, 2.060, 2.056, 2.052, 2.048, 2.045, 2.042];
+    var T99 = [63.657, 9.925, 5.841, 4.604, 4.032, 3.707, 3.499, 3.355, 3.250, 3.169,
+      3.106, 3.055, 3.012, 2.977, 2.947, 2.921, 2.898, 2.878, 2.861, 2.845,
+      2.831, 2.819, 2.807, 2.797, 2.787, 2.779, 2.771, 2.763, 2.756, 2.750];
+    function tFactor(conf, df) {
+      if (conf === '68') return 1.0;
+      var tbl = conf === '99' ? T99 : T95;
+      if (!Number.isFinite(df) || df < 1) return conf === '99' ? 2.576 : 1.960;
+      if (df >= 30) return conf === '99' ? 2.576 : 1.960;
+      return tbl[Math.round(df) - 1];
+    }
+
+    // ===== 模块 12：描述统计 =====
+    var m12 = {};
+    function m12Row(v) {
+      var tr = document.createElement('tr');
+      tr.innerHTML = '<td class="num hint"></td><td><input type="number" step="any" class="m12-x" /></td>' +
+        '<td><button type="button" class="btn ghost m12-del" title="删除该行">删</button></td>';
+      tr.querySelector('.m12-x').value = v == null ? '' : v;
+      return tr;
+    }
+    function m12RebuildIndex() {
+      Array.prototype.forEach.call($('m12-rows').rows, function (tr, i) { tr.cells[0].textContent = i + 1; });
+    }
+    function m12AddRow(v) { $('m12-rows').appendChild(m12Row(v)); m12RebuildIndex(); m12Compute(); }
+    function m12Readings() {
+      return Array.prototype.map.call(document.querySelectorAll('.m12-x'), function (i) { return num(i.value); })
+        .filter(function (n) { return Number.isFinite(n); });
+    }
+    function medianOf(arr) {
+      var s = arr.slice().sort(function (a, b) { return a - b; });
+      var m = s.length;
+      return m % 2 ? s[(m - 1) / 2] : (s[m / 2 - 1] + s[m / 2]) / 2;
+    }
+    function m12Compute() {
+      var vals = m12Readings(), box = $('m12-result');
+      if (vals.length < 2) { box.innerHTML = '<div class="hint">至少录入 2 个样本值。</div>'; m12._summary = []; m12._detail = []; return; }
+      var n = vals.length, xbar = mean(vals);
+      var sorted = vals.slice().sort(function (a, b) { return a - b; });
+      var med = medianOf(vals);
+      var min = sorted[0], max = sorted[n - 1], range = max - min;
+      var ss = vals.reduce(function (a, x) { return a + (x - xbar) * (x - xbar); }, 0);
+      var s2 = ss / (n - 1), s = Math.sqrt(s2);
+      var pop2 = ss / n, pop = Math.sqrt(pop2);
+      var lower = sorted.slice(0, Math.floor(n / 2));
+      var upper = sorted.slice(n - Math.floor(n / 2));
+      var q1 = medianOf(lower), q3 = medianOf(upper), iqr = q3 - q1;
+      var t95 = tFactor('95', n - 1), ci = t95 * s / Math.sqrt(n);
+      var unit = $('m12-unit').value.trim();
+      var rows = [
+        { label: '样本数 n', value: String(n) },
+        { label: '平均值 x̄', value: fmt(xbar, 4) + (unit ? ' ' + unit : '') },
+        { label: '中位数', value: fmt(med, 4) },
+        { label: '最小值 / 最大值', value: fmt(min, 4) + ' / ' + fmt(max, 4) },
+        { label: '极差 R', value: fmt(range, 4) },
+        { label: '样本方差 s²', value: fmt(s2, 6) },
+        { label: '样本标准差 s', value: fmt(s, 4) },
+        { label: '总体方差 σ²', value: fmt(pop2, 6) },
+        { label: '总体标准差 σ', value: fmt(pop, 4) },
+        { label: 'Q1 / Q3 / IQR', value: fmt(q1, 4) + ' / ' + fmt(q3, 4) + ' / ' + fmt(iqr, 4) },
+        { label: '95% 置信区间', value: fmt(xbar - ci, 4) + ' ~ ' + fmt(xbar + ci, 4) }
+      ];
+      var det = sorted.map(function (x, i) { return [i + 1, fmt(x, 4), fmt(x - xbar, 4)]; });
+      box.innerHTML = resTable(rows) +
+        '<div style="margin-top:10px"><table class="data"><thead><tr><th>序号</th><th class="num">排序值</th><th class="num">偏差 xᵢ−x̄</th></tr></thead><tbody>' +
+        det.map(function (r) { return '<tr><td class="num">' + r[0] + '</td><td class="num">' + r[1] + '</td><td class="num">' + r[2] + '</td></tr>'; }).join('') +
+        '</tbody></table></div>' +
+        '<div class="row-actions"><button type="button" class="btn secondary" data-copy="m12">复制结果表</button>' +
+        '<button type="button" class="btn secondary" data-csv="m12">导出 CSV</button></div>';
+      m12._summary = rows; m12._detail = det;
+    }
+
+    // ===== 模块 13：异常值判别 =====
+    var m13 = {};
+    var GRUBBS = { 3: 1.155, 4: 1.481, 5: 1.715, 6: 1.887, 7: 2.020, 8: 2.126, 9: 2.215, 10: 2.290, 11: 2.355, 12: 2.412, 13: 2.462, 14: 2.507, 15: 2.549, 16: 2.585, 17: 2.620, 18: 2.651, 19: 2.681, 20: 2.709 };
+    var DIXON = { 3: 0.970, 4: 0.829, 5: 0.710, 6: 0.628, 7: 0.569, 8: 0.608, 9: 0.564, 10: 0.530 };
+    function m13Row(v) {
+      var tr = document.createElement('tr');
+      tr.innerHTML = '<td class="num hint"></td><td><input type="number" step="any" class="m13-x" /></td>' +
+        '<td><button type="button" class="btn ghost m13-del" title="删除该行">删</button></td>';
+      tr.querySelector('.m13-x').value = v == null ? '' : v;
+      return tr;
+    }
+    function m13RebuildIndex() {
+      Array.prototype.forEach.call($('m13-rows').rows, function (tr, i) { tr.cells[0].textContent = i + 1; });
+    }
+    function m13AddRow(v) { $('m13-rows').appendChild(m13Row(v)); m13RebuildIndex(); m13Compute(); }
+    function m13Readings() {
+      return Array.prototype.map.call(document.querySelectorAll('.m13-x'), function (i) { return num(i.value); })
+        .filter(function (n) { return Number.isFinite(n); });
+    }
+    function m13Compute() {
+      var vals = m13Readings(), box = $('m13-result'), method = $('m13-method').value;
+      if (vals.length < 3) { box.innerHTML = '<div class="hint">至少录入 3 个样本值。</div>'; m13._summary = []; m13._detail = []; return; }
+      var n = vals.length, xbar = mean(vals);
+      var ss = vals.reduce(function (a, x) { return a + (x - xbar) * (x - xbar); }, 0);
+      var s = n > 1 ? Math.sqrt(ss / (n - 1)) : 0;
+      var flags = vals.map(function () { return false; });
+      var note = '', statLabel = '', statVal = '';
+      if (method === 'sigma3') {
+        vals.forEach(function (x, i) { flags[i] = Math.abs(x - xbar) > 3 * s; });
+        statLabel = '判据 |xᵢ − x̄| 大于 3s'; statVal = '3s = ' + fmt(3 * s, 4);
+      } else if (method === 'grubbs') {
+        var gi = 0, gmax = 0;
+        vals.forEach(function (x, i) { var g = Math.abs(x - xbar) / (s || 1e-12); if (g > gmax) { gmax = g; gi = i; } });
+        var gc = GRUBBS[n];
+        if (gc == null) { note = 'Grubbs 临界值表仅覆盖 n=3~20，当前 n=' + n + '，请改用 3σ 准则。'; }
+        else if (gmax > gc) flags[gi] = true;
+        statLabel = 'G = max|xᵢ − x̄|/s；G_crit(n=' + n + ', 0.05)'; statVal = 'G = ' + fmt(gmax, 4) + '，G_crit = ' + fmt(gc, 3);
+      } else {
+        if (n < 3 || n > 10) { note = 'Dixon Q 检验适用于 n=3~10，当前 n=' + n + '。'; }
+        var sorted = vals.slice().sort(function (a, b) { return a - b; });
+        var range = sorted[n - 1] - sorted[0], qLow = range > 0 ? (sorted[1] - sorted[0]) / range : 0, qHigh = range > 0 ? (sorted[n - 1] - sorted[n - 2]) / range : 0;
+        var qc = DIXON[n];
+        if (qc != null) {
+          if (qLow > qc) flags[vals.indexOf(sorted[0])] = true;
+          if (qHigh > qc) flags[vals.indexOf(sorted[n - 1])] = true;
+        }
+        statLabel = 'Q = 相邻差 / 极差；Q_crit(n=' + n + ', 0.05)'; statVal = 'Q低 = ' + fmt(qLow, 4) + '，Q高 = ' + fmt(qHigh, 4) + '，Q_crit = ' + fmt(qc || 0, 3);
+      }
+      var bad = vals.map(function (x, i) { return { x: x, i: i, flag: flags[i], dev: x - xbar }; }).filter(function (r) { return r.flag; });
+      var rows = [
+        { label: '样本数 n', value: String(n) },
+        { label: '平均值 x̄', value: fmt(xbar, 4) },
+        { label: '样本标准差 s', value: fmt(s, 4) },
+        { label: statLabel, value: statVal },
+        { label: '可疑值个数', value: bad.length ? String(bad.length) + ' 个' : '0 个' }
+      ];
+      var det = vals.map(function (x, i) { return [i + 1, fmt(x, 4), fmt(x - xbar, 4), flags[i] ? '可疑' : '正常']; });
+      var verdict = bad.length
+        ? '检出 ' + bad.length + ' 个可疑值（序号 ' + bad.map(function (r) { return r.i + 1; }).join('、') + '）；建议复核测量记录后决定是否剔除，剔除后重新计算。'
+        : '未检出可疑值，样本可保留。';
+      box.innerHTML = resTable(rows) +
+        '<p class="hint" style="margin-top:10px">' + esc(verdict) + (note ? '　' + esc(note) : '') + '</p>' +
+        '<div style="margin-top:10px"><table class="data"><thead><tr><th>序号</th><th class="num">样本值</th><th class="num">偏差</th><th>判定</th></tr></thead><tbody>' +
+        det.map(function (r) { return '<tr><td class="num">' + r[0] + '</td><td class="num">' + r[1] + '</td><td class="num">' + r[2] + '</td><td class="' + (r[3] === '可疑' ? 'bad' : 'ok') + '">' + r[3] + '</td></tr>'; }).join('') +
+        '</tbody></table></div>' +
+        '<div class="row-actions"><button type="button" class="btn secondary" data-copy="m13">复制结果表</button>' +
+        '<button type="button" class="btn secondary" data-csv="m13">导出 CSV</button></div>';
+      m13._summary = rows; m13._detail = det;
+    }
+
+    // ===== 共享：最小二乘直线拟合 =====
+    function linFitXY(X, Y) {
+      var n = X.length, sx = mean(X), sy = mean(Y);
+      var Lxx = 0, Lyy = 0, Lxy = 0;
+      for (var i = 0; i < n; i++) {
+        var dx = X[i] - sx, dy = Y[i] - sy;
+        Lxx += dx * dx; Lyy += dy * dy; Lxy += dx * dy;
+      }
+      var b = Lxx > 0 ? Lxy / Lxx : NaN, a = sy - b * sx;
+      var r = Lxx > 0 && Lyy > 0 ? Lxy / Math.sqrt(Lxx * Lyy) : NaN;
+      return { n: n, xbar: sx, ybar: sy, a: a, b: b, r: r, r2: Number.isFinite(r) ? r * r : NaN };
+    }
+
+    // ===== 模块 14：非线性拟合 =====
+    var m14 = {};
+    function m14Row(x, y) {
+      var tr = document.createElement('tr');
+      tr.innerHTML = '<td class="num hint"></td><td><input type="number" step="any" class="m14-x" /></td>' +
+        '<td><input type="number" step="any" class="m14-y" /></td>' +
+        '<td><button type="button" class="btn ghost m14-del" title="删除该行">删</button></td>';
+      tr.querySelector('.m14-x').value = x == null ? '' : x;
+      tr.querySelector('.m14-y').value = y == null ? '' : y;
+      return tr;
+    }
+    function m14RebuildIndex() {
+      Array.prototype.forEach.call($('m14-rows').rows, function (tr, i) { tr.cells[0].textContent = i + 1; });
+    }
+    function m14AddRow(x, y) { $('m14-rows').appendChild(m14Row(x, y)); m14RebuildIndex(); m14Compute(); }
+    function m14Pairs() {
+      var out = [];
+      Array.prototype.forEach.call($('m14-rows').rows, function (tr) {
+        var x = num(tr.querySelector('.m14-x').value), y = num(tr.querySelector('.m14-y').value);
+        if (Number.isFinite(x) && Number.isFinite(y)) out.push({ x: x, y: y });
+      });
+      return out;
+    }
+    function m14Compute() {
+      var box = $('m14-result'), chart = $('m14-chart');
+      var pairs = m14Pairs(), model = $('m14-model').value;
+      if (pairs.length < 3) { box.innerHTML = '<div class="hint">至少录入 3 组配对数据。</div>'; chart.innerHTML = ''; m14._rows = []; return; }
+      var X = [], Y = [], bad = false, badWhy = '';
+      pairs.forEach(function (p) {
+        var Xv, Yv;
+        if (model === 'exp') { if (p.y <= 0) bad = true; Xv = p.x; Yv = Math.log(p.y); }
+        else if (model === 'power') { if (p.x <= 0 || p.y <= 0) bad = true; Xv = Math.log(p.x); Yv = Math.log(p.y); }
+        else { if (p.x <= 0) bad = true; Xv = Math.log(p.x); Yv = p.y; }
+        X.push(Xv); Y.push(Yv);
+      });
+      if (bad) { box.innerHTML = '<div class="hint">当前模型要求相应坐标为正（ln 无定义），请检查数据。</div>'; chart.innerHTML = ''; return; }
+      var f = linFitXY(X, Y);
+      var A, B, eq, yhat;
+      if (model === 'exp') { A = Math.exp(f.a); B = f.b; eq = 'y = ' + fmt(A, 4) + '·e^(' + fmt(B, 4) + '·x)'; yhat = function (x) { return A * Math.exp(B * x); }; }
+      else if (model === 'power') { A = Math.exp(f.a); B = f.b; eq = 'y = ' + fmt(A, 4) + '·x^(' + fmt(B, 4) + ')'; yhat = function (x) { return A * Math.pow(x, B); }; }
+      else { A = f.a; B = f.b; eq = 'y = ' + fmt(A, 4) + ' + (' + fmt(B, 4) + ')·ln(x)'; yhat = function (x) { return A + B * Math.log(x); }; }
+      var fitted = pairs.map(function (p) { var yh = yhat(p.x); return { x: p.x, y: p.y, yhat: yh, resid: p.y - yh }; });
+      var xname = $('m14-xname').value.trim() || 'x', yname = $('m14-yname').value.trim() || 'y';
+      var rows = [
+        { label: '数据组数 n', value: String(f.n) },
+        { label: '模型参数 a', value: fmt(A, 4) },
+        { label: '模型参数 b', value: fmt(B, 4) },
+        { label: '变换后相关系数 r', value: fmt(f.r, 4) },
+        { label: '变换后 R²', value: fmt(f.r2, 4) }
+      ];
+      box.innerHTML = resTable(rows) +
+        '<p class="hint" style="margin-top:12px">拟合方程：<span class="tag">' + esc(eq) + '</span></p>' +
+        '<div style="margin-top:10px"><table class="data"><thead><tr><th>序号</th><th class="num">' + esc(xname) + '</th><th class="num">' + esc(yname) + '</th><th class="num">拟合 ŷ</th><th class="num">残差</th></tr></thead><tbody>' +
+        fitted.map(function (p, i) { return '<tr><td class="num">' + (i + 1) + '</td><td class="num">' + fmt(p.x, 4) + '</td><td class="num">' + fmt(p.y, 4) + '</td><td class="num">' + fmt(p.yhat, 4) + '</td><td class="num">' + fmt(p.resid, 4) + '</td></tr>'; }).join('') +
+        '</tbody></table></div>' +
+        '<div class="row-actions"><button type="button" class="btn secondary" data-copy="m14">复制结果表</button>' +
+        '<button type="button" class="btn secondary" data-csv="m14">导出 CSV</button>' +
+        '<button type="button" class="btn ghost" data-svg="m14">保存 SVG 图</button>' +
+        '<button type="button" class="btn ghost" data-png="m14">保存 PNG</button></div>';
+      m14._rows = rows; m14._fitted = fitted; m14._meta = { xname: xname, yname: yname, eq: eq };
+      m14DrawChart(pairs, yhat);
+    }
+    function m14DrawChart(pairs, yhat) {
+      var W = 640, H = 420, ml = 58, mr = 18, mt = 18, mb = 44;
+      var xs = pairs.map(function (p) { return p.x; }), ys = pairs.map(function (p) { return p.y; });
+      var xmin = Math.min.apply(null, xs), xmax = Math.max.apply(null, xs);
+      var ymin = Math.min.apply(null, ys), ymax = Math.max.apply(null, ys);
+      var xpad = (xmax - xmin) * 0.12 || 1, ypad = (ymax - ymin) * 0.12 || 1;
+      xmin -= xpad; xmax += xpad; ymin -= ypad; ymax += ypad;
+      function sx(x) { return ml + (x - xmin) / (xmax - xmin) * (W - ml - mr); }
+      function sy(y) { return H - mb - (y - ymin) / (ymax - ymin) * (H - mt - mb); }
+      var grid = '', ticks = 4, i;
+      for (i = 0; i <= ticks; i++) {
+        var gx = xmin + (xmax - xmin) * i / ticks, gy = ymin + (ymax - ymin) * i / ticks;
+        grid += '<line x1="' + sx(gx) + '" y1="' + mt + '" x2="' + sx(gx) + '" y2="' + (H - mb) + '" stroke="#1c2836"/>';
+        grid += '<text x="' + sx(gx) + '" y="' + (H - mb + 18) + '" font-size="11" fill="#8298ac" text-anchor="middle">' + fmt(gx, 2) + '</text>';
+        grid += '<line x1="' + ml + '" y1="' + sy(gy) + '" x2="' + (W - mr) + '" y2="' + sy(gy) + '" stroke="#1c2836"/>';
+        grid += '<text x="' + (ml - 8) + '" y="' + (sy(gy) + 4) + '" font-size="11" fill="#8298ac" text-anchor="end">' + fmt(gy, 2) + '</text>';
+      }
+      var pts = [];
+      for (i = 0; i <= 40; i++) {
+        var x = xmin + (xmax - xmin) * i / 40, y = yhat(x);
+        if (Number.isFinite(y) && y >= ymin && y <= ymax) pts.push(sx(x).toFixed(1) + ',' + sy(y).toFixed(1));
+      }
+      var curve = pts.length > 1 ? '<polyline points="' + pts.join(' ') + '" stroke="#2dd4bf" stroke-width="2" fill="none"/>' : '';
+      var dots = pairs.map(function (p) { return '<circle cx="' + sx(p.x) + '" cy="' + sy(p.y) + '" r="4" fill="#f5b13d"/>'; }).join('');
+      var m = m14._meta || {};
+      $('m14-chart').innerHTML = '<svg class="chart" viewBox="0 0 ' + W + ' ' + H + '" xmlns="http://www.w3.org/2000/svg">' + grid + curve + dots +
+        '<line x1="' + ml + '" y1="' + (H - mb) + '" x2="' + (W - mr) + '" y2="' + (H - mb) + '" stroke="#5a7184" stroke-width="1.5"/>' +
+        '<line x1="' + ml + '" y1="' + mt + '" x2="' + ml + '" y2="' + (H - mb) + '" stroke="#5a7184" stroke-width="1.5"/>' +
+        '<text x="' + ((ml + W - mr) / 2) + '" y="' + (H - 8) + '" font-size="12" fill="#dbe6f0" text-anchor="middle">' + esc(m.xname || 'x') + '</text>' +
+        '<text x="14" y="' + ((mt + H - mb) / 2) + '" font-size="12" fill="#dbe6f0" text-anchor="middle" transform="rotate(-90 14 ' + ((mt + H - mb) / 2) + ')">' + esc(m.yname || 'y') + '</text>' +
+        '<text x="' + (W - mr) + '" y="' + (mt + 4) + '" font-size="11" fill="#2dd4bf" text-anchor="end">' + esc(m.eq || '') + '</text></svg>';
+    }
+
+    // ===== 模块 15：修约 · t 因子 =====
+    var m15 = {};
+    function m15Compute() {
+      var box = $('m15-result');
+      var xbar = num($('m15-xbar').value), uc = num($('m15-uc').value), n = num($('m15-n').value);
+      var conf = $('m15-conf').value;
+      if (!Number.isFinite(xbar) || !Number.isFinite(uc) || uc <= 0) { box.innerHTML = '<div class="hint">录入最佳值与标准不确定度 u_c（&gt;0）。</div>'; m15._summary = []; return; }
+      var df = Number.isFinite(n) && n > 1 ? n - 1 : 1;
+      var t = tFactor(conf, df), U = t * uc;
+      var dec = uDecimals(U);
+      var rx = roundTo(xbar, dec), rU = roundTo(U, dec);
+      var name = $('m15-name').value.trim() || 'x', unit = $('m15-unit').value.trim();
+      var rows = [
+        { label: '自由度 ν = n − 1', value: String(df) },
+        { label: '包含因子 t（' + conf + '%）', value: fmt(t, 4) },
+        { label: '标准不确定度 u_c', value: fmt(uc, 6) },
+        { label: '扩展不确定度 U = t·u_c', value: fmt(U, 6) },
+        { label: '修约后最佳值', value: fmt(rx, dec) + (unit ? ' ' + unit : '') },
+        { label: '修约后扩展不确定度', value: fmt(rU, dec) }
+      ];
+      var expr = name + ' = (' + fmt(rx, dec) + ' ± ' + fmt(rU, dec) + ')' + (unit ? ' ' + unit : '') +
+        '（' + conf + '% 置信概率，k=' + fmt(t, 3) + '）。';
+      box.innerHTML = resTable(rows) +
+        '<p class="hint" style="margin-top:12px">标准结果表示：<span class="tag">' + esc(expr) + '</span></p>' +
+        '<div class="row-actions"><button type="button" class="btn secondary" data-copy="m15">复制结果表</button></div>';
+      m15._summary = rows; m15._expr = expr;
+    }
+
+    // ===== 模块 16：数电工具 =====
+    var m16 = { sub: 'conv' };
+    function m16Show(sub) {
+      m16.sub = sub;
+      var wrapMap = { conv: 'm16-conv', expr: 'm16-expr-wrap', kmap: 'm16-kmap', code: 'm16-code' };
+      Object.keys(wrapMap).forEach(function (s) { $(wrapMap[s]).classList.toggle('hidden', s !== sub); });
+      Array.prototype.forEach.call(document.querySelectorAll('#m16-seg button'), function (b) {
+        b.classList.toggle('active', b.dataset.sub === sub);
+      });
+      m16Compute();
+    }
+    // 逻辑表达式解析：! 非 > & 与 > ^ 异或 > | 或
+    function logicTokenize(src) {
+      var re = /([A-D])|([!&|^()])/gi, toks = [], m;
+      while ((m = re.exec(src))) toks.push(m[0].toUpperCase());
+      return toks;
+    }
+    function LogicEval(toks, env) { this.t = toks; this.pos = 0; this.env = env; }
+    LogicEval.prototype.peek = function () { return this.t[this.pos]; };
+    LogicEval.prototype.next = function () { return this.t[this.pos++]; };
+    LogicEval.prototype.parseOr = function () { var v = this.parseXor(); while (this.peek() === '|') { this.next(); v = v | this.parseXor(); } return v; };
+    LogicEval.prototype.parseXor = function () { var v = this.parseAnd(); while (this.peek() === '^') { this.next(); v = v ^ this.parseAnd(); } return v; };
+    LogicEval.prototype.parseAnd = function () { var v = this.parseNot(); while (this.peek() === '&') { this.next(); v = v & this.parseNot(); } return v; };
+    LogicEval.prototype.parseNot = function () { if (this.peek() === '!') { this.next(); return 1 - this.parseNot(); } return this.parsePrimary(); };
+    LogicEval.prototype.parsePrimary = function () {
+      var tk = this.peek();
+      if (tk === '(') { this.next(); var v = this.parseOr(); if (this.next() !== ')') throw new Error('缺少右括号'); return v; }
+      if (/^[A-D]$/.test(tk)) { this.next(); return this.env[tk]; }
+      throw new Error('表达式有误');
+    };
+    function logicEval(expr, env) {
+      var toks = logicTokenize(expr);
+      if (!toks.length) throw new Error('表达式为空');
+      var p = new LogicEval(toks, env), v = p.parseOr();
+      if (p.pos < toks.length) throw new Error('表达式末尾有多余内容');
+      return v;
+    }
+    // 奎因-麦克拉斯基化简
+    function qmMinimize(minterms, k) {
+      var masks = minterms.map(function (m) { return { mask: m, dash: [], used: false }; });
+      var primes = [];
+      function diffBit(a, b) {
+        var d = a.mask ^ b.mask, cnt = 0, bit = -1;
+        for (var i = 0; i < k; i++) {
+          var ad = a.dash.indexOf(i) >= 0, bd = b.dash.indexOf(i) >= 0;
+          if (ad || bd) { if (((a.mask >> i) & 1) !== ((b.mask >> i) & 1)) return -1; continue; }
+          if (d >> i & 1) { cnt++; bit = i; }
+        }
+        return cnt === 1 ? bit : -1;
+      }
+      var changed = true;
+      while (changed) {
+        changed = false; var next = [];
+        for (var i = 0; i < masks.length; i++) {
+          for (var j = i + 1; j < masks.length; j++) {
+            var bit = diffBit(masks[i], masks[j]);
+            if (bit >= 0) {
+              masks[i].used = masks[j].used = true; changed = true;
+              var dash = masks[i].dash.concat([bit]);
+              var dup = next.some(function (n) { return n.mask === masks[i].mask && n.dash.join() === dash.join(); });
+              if (!dup) next.push({ mask: masks[i].mask, dash: dash, used: false });
+            }
+          }
+        }
+        masks.forEach(function (m) { if (!m.used) primes.push(m); });
+        masks = next;
+      }
+      primes.forEach(function (p) { if (!primes.some(function (q) { return q !== p && q.dash.join() === p.dash.join() && q.mask === p.mask; })) { } });
+      // 去重
+      var uniq = [], seen = {};
+      primes.forEach(function (p) { var key = p.mask + '|' + p.dash.slice().sort().join(','); if (!seen[key]) { seen[key] = 1; uniq.push(p); } });
+      // 覆盖选择
+      function covers(p, m) {
+        for (var i = 0; i < k; i++) {
+          if (p.dash.indexOf(i) >= 0) continue;
+          if (((p.mask >> i) & 1) !== ((m >> i) & 1)) return false;
+        }
+        return true;
+      }
+      var uncovered = minterms.slice(), chosen = [];
+      var essential = uniq.filter(function (p) { return uncovered.some(function (m) { return covers(p, m) && uniq.filter(function (q) { return covers(q, m); }).length === 1; }); });
+      essential.forEach(function (p) {
+        chosen.push(p);
+        uncovered = uncovered.filter(function (m) { return !covers(p, m); });
+      });
+      while (uncovered.length) {
+        var best = null, bestN = -1;
+        uniq.forEach(function (p) { var n = uncovered.filter(function (m) { return covers(p, m); }).length; if (n > bestN) { bestN = n; best = p; } });
+        if (!best) break;
+        chosen.push(best);
+        uncovered = uncovered.filter(function (m) { return !covers(best, m); });
+      }
+      return chosen.map(function (p) {
+        var terms = [];
+        for (var i = k - 1; i >= 0; i--) {
+          if (p.dash.indexOf(i) >= 0) continue;
+          var v = (p.mask >> i) & 1, name = 'ABCD'[k - 1 - i];
+          terms.push(v ? name : '!' + name);
+        }
+        return terms.join('·') || '1';
+      });
+    }
+    function m16Compute() {
+      var box = $('m16-result'), sub = m16.sub;
+      if (sub === 'conv') {
+        var base = parseInt($('m16-conv-base').value, 10), raw = $('m16-conv-val').value.trim();
+        var dec = parseInt(raw, base);
+        if (!/^[0-9a-fA-F]+$/.test(raw) || !Number.isFinite(dec) || dec < 0) { box.innerHTML = '<div class="hint">无法解析为该进制下的非负整数。</div>'; return; }
+        var rows = [
+          { label: '二进制', value: dec.toString(2) },
+          { label: '八进制', value: dec.toString(8) },
+          { label: '十进制', value: dec.toString(10) },
+          { label: '十六进制', value: dec.toString(16).toUpperCase() }
+        ];
+        box.innerHTML = resTable(rows) + '<div class="row-actions"><button type="button" class="btn secondary" data-copy="m16">复制结果表</button></div>';
+        m16._rows = rows;
+      } else if (sub === 'expr') {
+        var expr = $('m16-expr').value.trim();
+        var vars = expr.match(/[A-D]/gi) || [];
+        var varset = Array.prototype.filter.call('ABCD', function (c) { return vars.indexOf(c) >= 0; });
+        if (!expr || !varset.length) { box.innerHTML = '<div class="hint">输入含变量 A~D 的逻辑表达式。</div>'; return; }
+        var table = '', bits = varset.length;
+        try {
+          for (var n = 0; n < Math.pow(2, bits); n++) {
+            var env = {}, row = '';
+            varset.forEach(function (v, i) { var bit = (n >> (bits - 1 - i)) & 1; env[v] = bit; row += '<td class="num">' + bit + '</td>'; });
+            var y = logicEval(expr, env);
+            table += '<tr>' + row + '<td class="num ok">' + y + '</td></tr>';
+          }
+        } catch (ex) { box.innerHTML = '<div class="hint bad">' + esc(String(ex.message || ex)) + '</div>'; return; }
+        var head = varset.map(function (v) { return '<th class="num">' + v + '</th>'; }).join('') + '<th class="num">Y</th>';
+        box.innerHTML = '<table class="data"><thead><tr>' + head + '</tr></thead><tbody>' + table + '</tbody></table>' +
+          '<div class="row-actions"><button type="button" class="btn secondary" data-copy="m16">复制真值表</button></div>';
+        m16._rows = [['表达式', expr]];
+      } else if (sub === 'kmap') {
+        var k = parseInt($('m16-kmap-vars').value, 10);
+        var minterms = ($('m16-minterms').value.match(/\d+/g) || []).map(Number).filter(function (m) { return m >= 0 && m < Math.pow(2, k); });
+        if (!minterms.length) { box.innerHTML = '<div class="hint">输入最小项编号，如 0,1,2,3。</div>'; return; }
+        var sop = qmMinimize(minterms, k);
+        box.innerHTML = resTable([
+          { label: '最小项', value: 'm(' + minterms.join(', ') + ')' },
+          { label: '最简与或式 SOP', value: sop.join(' + ') }
+        ]) + '<div class="row-actions"><button type="button" class="btn secondary" data-copy="m16">复制结果表</button></div>';
+        m16._rows = [['SOP', sop.join(' + ')]];
+      } else {
+        var preset = $('m16-code-preset').value, rowsHtml = '', headHtml = '';
+        if (preset === 'bcd8421') {
+          headHtml = '<th>十进制</th><th class="num">D</th><th class="num">C</th><th class="num">B</th><th class="num">A</th>';
+          for (var d = 0; d <= 9; d++) { var b = d.toString(2).padStart(4, '0'); rowsHtml += '<tr><td class="num">' + d + '</td><td class="num">' + b[0] + '</td><td class="num">' + b[1] + '</td><td class="num">' + b[2] + '</td><td class="num">' + b[3] + '</td></tr>'; }
+        } else if (preset === 'dec38') {
+          headHtml = '<th class="num">C</th><th class="num">B</th><th class="num">A</th><th class="num">Y0</th><th class="num">Y1</th><th class="num">Y2</th><th class="num">Y3</th><th class="num">Y4</th><th class="num">Y5</th><th class="num">Y6</th><th class="num">Y7</th>';
+          for (var a = 0; a < 8; a++) { var out = Array(8).fill(1); out[a] = 0; rowsHtml += '<tr><td class="num">' + (a >> 2 & 1) + '</td><td class="num">' + (a >> 1 & 1) + '</td><td class="num">' + (a & 1) + '</td>' + out.map(function (o) { return '<td class="num">' + o + '</td>'; }).join('') + '</tr>'; }
+        } else {
+          headHtml = '<th class="num">I0</th><th class="num">I1</th><th class="num">I2</th><th class="num">I3</th><th class="num">Y1</th><th class="num">Y0</th>';
+          for (var e = 0; e < 4; e++) { var inp = Array(4).fill(0); inp[e] = 1; rowsHtml += '<tr>' + inp.map(function (x) { return '<td class="num">' + x + '</td>'; }).join('') + '<td class="num">' + (e >> 1 & 1) + '</td><td class="num">' + (e & 1) + '</td></tr>'; }
+        }
+        box.innerHTML = '<table class="data"><thead><tr>' + headHtml + '</tr></thead><tbody>' + rowsHtml + '</tbody></table>' +
+          '<div class="row-actions"><button type="button" class="btn secondary" data-copy="m16">复制真值表</button></div>';
+      }
+    }
+
+    // ===== 模块 17：实验报告生成 =====
+    function reportSummary(rows) {
+      if (!rows || !rows.length) return '';
+      return '<table class="res-table">' + rows.map(function (r) {
+        return '<tr><th>' + esc(r.label) + '</th><td class="num">' + esc(r.value) + '</td></tr>';
+      }).join('') + '</table>';
+    }
+    function reportDetail(head, rows) {
+      if (!rows || !rows.length) return '';
+      function cell(c) {
+        if (typeof c === 'number' && Number.isFinite(c)) return fmt(c, 4);
+        return String(c == null ? '' : c);
+      }
+      return '<table class="data" style="margin-top:10px"><thead><tr>' + head.map(function (h) { return '<th>' + esc(h) + '</th>'; }).join('') + '</tr></thead><tbody>' +
+        rows.map(function (r) { return '<tr>' + r.map(function (c) { return '<td class="num">' + esc(cell(c)) + '</td>'; }).join('') + '</tr>'; }).join('') + '</tbody></table>';
+    }
+    function reportChart(sel) {
+      var svg = document.querySelector(sel);
+      if (!svg) return '';
+      var clone = svg.cloneNode(true);
+      clone.removeAttribute('class'); clone.setAttribute('class', 'chart');
+      return '<div style="margin-top:10px">' + clone.outerHTML + '</div>';
+    }
+    function m17Build() {
+      var box = $('m17-result'), title = $('m17-title').value.trim() || '实验数据处理报告', date = $('m17-date').value.trim();
+      var sections = [];
+      function push(rep) { if (rep.html) sections.push(rep); }
+      if (m1._summary && m1._summary.length) push({ title: '重复测量 · 不确定度评定', html: reportSummary(m1._summary) + reportDetail(['序号', '读数 xᵢ', '残差 vᵢ', 'vᵢ²'], m1._detail) });
+      if (m2._rows && m2._rows.length) push({ title: '一元线性拟合', html: reportSummary(m2._rows) + reportDetail(['序号', 'x', 'y', '拟合 ŷ', '残差'], m2._fitted.map(function (p, i) { return [i + 1, p.x, p.y, p.yhat, p.resid]; })) + reportChart('#m2-chart svg') });
+      if (m3._table && m3._table.length) push({ title: '电路参数 · 三表法', html: reportDetail(m3._table[0], m3._table.slice(1)) });
+      if (m4._report && m4._report.length) push({ title: '数电真值表核对', html: reportDetail(m4._report[0], m4._report.slice(1)) });
+      if (m5._summary && m5._summary.length) push({ title: '逐差法', html: reportSummary(m5._summary) });
+      if (m6._summary && m6._summary.length) push({ title: '误差传递 · 间接测量', html: reportSummary(m6._summary) });
+      if (m7._summary && m7._summary.length) push({ title: 'RC 时间常数', html: reportSummary(m7._summary) });
+      if (m8._summary && m8._summary.length) push({ title: '光学干涉计算', html: reportSummary(m8._summary) });
+      if (m9._summary && m9._summary.length) push({ title: '基础计算器', html: reportSummary(m9._summary) });
+      if (m10._rows && m10._rows.length) push({ title: '函数作图 · 采样表', html: reportChart('#m10-chart svg') });
+      if (m11._summary && m11._summary.length) push({ title: '单位换算', html: reportSummary(m11._summary) });
+      if (m12._summary && m12._summary.length) push({ title: '描述统计', html: reportSummary(m12._summary) + reportDetail(['序号', '排序值', '偏差'], m12._detail) });
+      if (m13._summary && m13._summary.length) push({ title: '异常值判别', html: reportSummary(m13._summary) + reportDetail(['序号', '样本值', '偏差', '判定'], m13._detail) });
+      if (m14._rows && m14._rows.length) push({ title: '非线性拟合', html: reportSummary(m14._rows) + reportDetail(['序号', 'x', 'y', '拟合 ŷ', '残差'], m14._fitted.map(function (p, i) { return [i + 1, p.x, p.y, p.yhat, p.resid]; })) + reportChart('#m14-chart svg') });
+      if (m15._summary && m15._summary.length) push({ title: '修约 · t 因子', html: reportSummary(m15._summary) });
+      var head = '<div class="report-doc"><h2 style="margin:0 0 6px;font-size:18px">' + esc(title) + '</h2>' +
+        (date ? '<div class="hint" style="margin-bottom:14px">日期：' + esc(date) + '</div>' : '');
+      if (!sections.length) { box.innerHTML = head + '<p class="report-empty">暂无已计算的模块结果。先在各模块录入数据并计算，再回到本页刷新报告。</p></div>'; return; }
+      box.innerHTML = head + sections.map(function (s) {
+        return '<div class="report-sec"><h3>' + esc(s.title) + '</h3>' + s.html + '</div>';
+      }).join('') + '</div>';
+    }
+
+    // ===== 新模块事件接线 =====
+    ['m12', 'm13', 'm14', 'm15'].forEach(function (k) {
+      var evt = k === 'm14' ? m14Compute : (k === 'm15' ? m15Compute : (k === 'm12' ? m12Compute : m13Compute));
+      var rows = $(k + '-rows');
+      if (rows) rows.addEventListener('input', evt);
+    });
+    $('m12-add').addEventListener('click', function () { m12AddRow(); });
+    $('m12-rows').addEventListener('click', function (e) { if (e.target.classList.contains('m12-del')) { e.target.closest('tr').remove(); m12RebuildIndex(); m12Compute(); } });
+    $('m12-paste').addEventListener('click', function () { openPasteModal(function (cells) { var vals = cells.map(function (c) { return c[0]; }); vals.forEach(function (v) { m12AddRow(v); }); }); });
+    $('m12-sample').addEventListener('click', function () { $('m12-rows').innerHTML = ''; [10.21, 10.18, 10.25, 10.19, 10.22, 10.17, 10.24, 10.20].forEach(function (v) { m12AddRow(v); }); });
+    $('m12-clear').addEventListener('click', function () { $('m12-rows').innerHTML = ''; for (var i = 0; i < 6; i++) m12AddRow(); });
+    $('m13-add').addEventListener('click', function () { m13AddRow(); });
+    $('m13-rows').addEventListener('click', function (e) { if (e.target.classList.contains('m13-del')) { e.target.closest('tr').remove(); m13RebuildIndex(); m13Compute(); } });
+    $('m13-method').addEventListener('input', m13Compute);
+    $('m13-paste').addEventListener('click', function () { openPasteModal(function (cells) { cells.map(function (c) { return c[0]; }).forEach(function (v) { m13AddRow(v); }); }); });
+    $('m13-sample').addEventListener('click', function () { $('m13-rows').innerHTML = ''; [20.1, 20.3, 20.2, 20.4, 20.2, 35.0].forEach(function (v) { m13AddRow(v); }); });
+    $('m13-clear').addEventListener('click', function () { $('m13-rows').innerHTML = ''; for (var i = 0; i < 6; i++) m13AddRow(); });
+    $('m14-add').addEventListener('click', function () { m14AddRow(); });
+    $('m14-rows').addEventListener('click', function (e) { if (e.target.classList.contains('m14-del')) { e.target.closest('tr').remove(); m14RebuildIndex(); m14Compute(); } });
+    $('m14-paste').addEventListener('click', function () { openPasteModal(function (cells) { cells.forEach(function (c) { m14AddRow(c[0], c[1]); }); }); });
+    ['m14-model', 'm14-xname', 'm14-xunit', 'm14-yname', 'm14-yunit'].forEach(function (id) { $(id).addEventListener('input', m14Compute); });
+    $('m14-sample').addEventListener('click', function () {
+      $('m14-rows').innerHTML = '';
+      var xs = [1, 2, 3, 4, 5], ys = [2.72, 7.39, 20.1, 54.6, 148.4];
+      xs.forEach(function (x, i) { m14AddRow(x, ys[i]); });
+    });
+    $('m14-clear').addEventListener('click', function () { $('m14-rows').innerHTML = ''; for (var i = 0; i < 6; i++) m14AddRow(); });
+    ['m15-xbar', 'm15-uc', 'm15-n', 'm15-conf', 'm15-name', 'm15-unit'].forEach(function (id) { $(id).addEventListener('input', m15Compute); });
+    Array.prototype.forEach.call(document.querySelectorAll('#m16-seg button'), function (b) {
+      b.addEventListener('click', function () { m16Show(b.dataset.sub); });
+    });
+    ['m16-conv-base', 'm16-conv-val'].forEach(function (id) { $(id).addEventListener('input', m16Compute); });
+    $('m16-expr').addEventListener('input', m16Compute);
+    ['m16-kmap-vars', 'm16-minterms'].forEach(function (id) { $(id).addEventListener('input', m16Compute); });
+    $('m16-code-preset').addEventListener('input', m16Compute);
+    $('m17-refresh').addEventListener('click', m17Build);
+    $('m17-print').addEventListener('click', function () { m17Build(); window.print(); });
+    for (var s12 = 0; s12 < 6; s12++) m12AddRow();
+    for (var s13 = 0; s13 < 6; s13++) m13AddRow();
+    for (var s14 = 0; s14 < 6; s14++) m14AddRow();
+    m16Show('conv');
+
+    // ===== 统一导出：复制 TSV / 导出 CSV / 保存 SVG =====
+    function toCSV(rows) {
+      var lines = rows.map(function (r) {
+        return r.map(function (c) { return '"' + String(c == null ? '' : c).replace(/"/g, '""') + '"'; }).join(',');
+      });
+      return '\uFEFF' + lines.join('\r\n');
+    }
+    function downloadBlob(blob, name) {
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement('a');
+      a.href = url; a.download = name;
+      document.body.appendChild(a); a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+    function svgToPng(svg, name) {
+      var xml = new XMLSerializer().serializeToString(svg);
+      var blob = new Blob([xml], { type: 'image/svg+xml;charset=utf-8' });
+      var url = URL.createObjectURL(blob);
+      var img = new Image();
+      img.onload = function () {
+        var vb = svg.viewBox && svg.viewBox.baseVal;
+        var W = (vb && vb.width) || 640, H = (vb && vb.height) || 420, scale = 2;
+        var canvas = document.createElement('canvas');
+        canvas.width = W * scale; canvas.height = H * scale;
+        var ctx = canvas.getContext('2d');
+        ctx.fillStyle = '#070b11'; ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        URL.revokeObjectURL(url);
+        canvas.toBlob(function (b) { if (b) downloadBlob(b, name); }, 'image/png');
+      };
+      img.src = url;
+    }
+    function modeRows(key) {
+      if (key === 'm1') {
+        var head = ['项目', '数值'];
+        var sum = m1._summary.map(function (r) { return [r.label, r.value]; });
+        var det = [['序号', '读数 xᵢ', '残差 vᵢ', 'vᵢ²']].concat(m1._detail);
+        return head.concat(sum, [[]], det);
+      }
+      if (key === 'm2') {
+        var s2 = m2._rows.map(function (r) { return [r.label, r.value]; });
+        var d2 = [['序号', 'x', 'y', '拟合 ŷ', '残差']].concat(m2._fitted.map(function (p, i) { return [i + 1, p.x, p.y, p.yhat, p.resid]; }));
+        return s2.concat([[]], d2);
+      }
+      if (key === 'm3') return m3._table;
+      if (key === 'm4') return m4._report;
+      if (key === 'm5') {
+        var s5 = m5._summary.map(function (r) { return [r.label, r.value]; });
+        var d5 = [['前半序号', 'aᵢ', '后半序号', 'bᵢ', '逐差 Δᵢ', 'Δᵢ−Δ̄', '偏差²']].concat(m5._detail);
+        return s5.concat([[]], d5);
+      }
+      if (key === 'm6') return m6._summary.map(function (r) { return [r.label, r.value]; });
+      if (key === 'm7') return m7._summary.map(function (r) { return [r.label, r.value]; });
+      if (key === 'm8') return m8._summary.map(function (r) { return [r.label, r.value]; });
+      if (key === 'm9') return m9._summary;
+      if (key === 'm10') return m10._rows;
+      if (key === 'm11') return m11._summary.map(function (r) { return [r.label, r.value]; });
+      if (key === 'm12') {
+        var s12 = m12._summary.map(function (r) { return [r.label, r.value]; });
+        return s12.concat([[]], [['序号', '排序值', '偏差']].concat(m12._detail));
+      }
+      if (key === 'm13') {
+        var s13 = m13._summary.map(function (r) { return [r.label, r.value]; });
+        return s13.concat([[]], [['序号', '样本值', '偏差', '判定']].concat(m13._detail));
+      }
+      if (key === 'm14') {
+        var s14 = m14._rows.map(function (r) { return [r.label, r.value]; });
+        var d14 = [['序号', 'x', 'y', '拟合 ŷ', '残差']].concat(m14._fitted.map(function (p, i) { return [i + 1, p.x, p.y, p.yhat, p.resid]; }));
+        return s14.concat([[]], d14);
+      }
+      if (key === 'm15') return m15._summary.map(function (r) { return [r.label, r.value]; });
+      if (key === 'm16') return m16._rows || [];
+      return [];
+    }
+    document.addEventListener('click', function (e) {
+      var copyBtn = e.target.closest('[data-copy]');
+      var csvBtn = e.target.closest('[data-csv]');
+      var svgBtn = e.target.closest('[data-svg]');
+      var pngBtn = e.target.closest('[data-png]');
+      if (copyBtn) {
+        var tsv = modeRows(copyBtn.dataset.copy).map(function (r) { return r.join('\t'); }).join('\r\n');
+        if (navigator.clipboard && navigator.clipboard.writeText) { navigator.clipboard.writeText(tsv); }
+        else {
+          var ta = document.createElement('textarea'); ta.value = tsv; document.body.appendChild(ta); ta.select();
+          document.execCommand('copy'); document.body.removeChild(ta);
+        }
+        copyBtn.textContent = '已复制'; setTimeout(function () { copyBtn.textContent = '复制结果表'; }, 1200);
+      } else if (csvBtn) {
+        var csv = toCSV(modeRows(csvBtn.dataset.csv));
+        downloadBlob(new Blob([csv], { type: 'text/csv;charset=utf-8;' }), '实验数据_' + csvBtn.dataset.csv + '.csv');
+      } else if (svgBtn) {
+        var svgMap = { m2: '#m2-chart svg', m10: '#m10-chart svg', m14: '#m14-chart svg' };
+        var svg = document.querySelector(svgMap[svgBtn.dataset.svg] || '#m2-chart svg');
+        if (svg) {
+          var xml = new XMLSerializer().serializeToString(svg);
+          var svgName = svgBtn.dataset.svg === 'm10' ? '函数曲线.svg' : svgBtn.dataset.svg === 'm14' ? '非线性拟合曲线.svg' : '拟合曲线.svg';
+          downloadBlob(new Blob([xml], { type: 'image/svg+xml;charset=utf-8;' }), svgName);
+        }
+      } else if (pngBtn) {
+        var pngMap = { m2: '#m2-chart svg', m10: '#m10-chart svg', m14: '#m14-chart svg' };
+        var pngSvg = document.querySelector(pngMap[pngBtn.dataset.png] || '#m2-chart svg');
+        if (pngSvg) svgToPng(pngSvg, pngBtn.dataset.png === 'm10' ? '函数曲线.png' : pngBtn.dataset.png === 'm14' ? '非线性拟合曲线.png' : '拟合曲线.png');
+      }
+    });
+  })();
+  </script>
+</body>
+</html>
